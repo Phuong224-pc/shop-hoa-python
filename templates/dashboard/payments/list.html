@@ -1,0 +1,189 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Quản Lý Thanh Toán & Đối Soát{% endblock %}
+{% block page_title %}Giao Dịch Thanh Toán & Đối Soát Ngân Hàng{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-serif fw-bold mb-1">Giao Dịch Thanh Toán</h4>
+        <small class="text-muted">Quản lý thu tiền chuyển khoản VietQR, tiền mặt COD và hoàn tiền</small>
+    </div>
+    {% if waiting_count > 0 %}
+        <span class="badge bg-warning text-dark fs-7 px-3 py-2">
+            <i class="bi bi-clock-history me-1"></i> Có <strong>{{ waiting_count }}</strong> giao dịch chờ đối soát chứng từ
+        </span>
+    {% endif %}
+</div>
+
+<!-- Bộ lọc -->
+<div class="card p-3 border-0 shadow-sm rounded-4 mb-4 bg-white">
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'dashboard:payment_list' %}" class="btn btn-sm {% if not current_status %}btn-flora{% else %}btn-outline-secondary{% endif %}">
+            Tất cả giao dịch
+        </a>
+        <a href="?status=WAITING_VERIFICATION" class="btn btn-sm {% if current_status == 'WAITING_VERIFICATION' %}btn-warning text-dark{% else %}btn-outline-warning text-dark{% endif %}">
+            Chờ đối soát ({{ waiting_count }})
+        </a>
+        <a href="?status=PAID" class="btn btn-sm {% if current_status == 'PAID' %}btn-success{% else %}btn-outline-success{% endif %}">
+            Đã thanh toán
+        </a>
+        <a href="?status=UNPAID" class="btn btn-sm {% if current_status == 'UNPAID' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+            Chưa thanh toán
+        </a>
+        <a href="?status=REFUNDED" class="btn btn-sm {% if current_status == 'REFUNDED' %}btn-dark{% else %}btn-outline-dark{% endif %}">
+            Đã hoàn tiền
+        </a>
+    </div>
+</div>
+
+<!-- Bảng giao dịch -->
+<div class="dash-card">
+    <div class="table-responsive">
+        <table class="table dash-table mb-0">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Thời điểm tạo</th>
+                    <th>Phương thức</th>
+                    <th>Số tiền</th>
+                    <th>Chứng từ chuyển khoản</th>
+                    <th>Trạng thái</th>
+                    <th>Nhân viên đối soát</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in page_obj %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'dashboard:order_detail' pk=p.order.pk %}" class="fw-bold text-success text-decoration-none">
+                                #{{ p.order.order_number }}
+                            </a>
+                            <small class="text-muted d-block">{{ p.order.sender_name }}</small>
+                        </td>
+                        <td class="text-muted fs-7">{{ p.created_at|date("d/m/Y H:i") }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ p.get_payment_method_display }}</span>
+                            {% if p.transaction_code %}<small class="text-muted d-block font-monospace">{{ p.transaction_code }}</small>{% endif %}
+                        </td>
+                        <td class="fw-bold text-success">{{ p.amount|currency }}</td>
+                        <td>
+                            {% if p.proof_image %}
+                                <a href="{% url 'payments:view_proof' transaction_id=p.id %}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2 fs-7">
+                                    <i class="bi bi-image me-1"></i> Xem biên lai
+                                </a>
+                                {% if p.proof_uploaded_at %}
+                                    <small class="text-muted d-block fs-8">{{ p.proof_uploaded_at|date("H:i d/m") }}</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted fs-7">Chưa gửi</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ p.status|payment_status_badge }}</td>
+                        <td class="fs-7 text-muted">
+                            {% if p.verified_by %}
+                                {{ p.verified_by.username }}
+                                <small class="d-block">{{ p.verified_at|date("d/m/Y H:i") }}</small>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if p.status == 'WAITING_VERIFICATION' %}
+                                <form action="{% url 'dashboard:payment_verify' pk=p.pk %}" method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit" class="btn btn-sm btn-success me-1">
+                                        <i class="bi bi-check-lg"></i> Duyệt
+                                    </button>
+                                </form>
+                            {% elif p.status == 'UNPAID' and p.payment_method == 'COD' %}
+                                <form action="{% url 'dashboard:payment_verify' pk=p.pk %}" method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="cod_confirm">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                        Thu COD
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                            {% if p.status == 'PAID' %}
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#refundModal_{{ p.id }}">
+                                    Hoàn tiền
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- Modal Hoàn Tiền cho từng payment -->
+                    {% if p.status == 'PAID' %}
+                    <div class="modal fade" id="refundModal_{{ p.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                                <div class="modal-header border-bottom">
+                                    <h5 class="modal-title font-serif text-danger">Tạo Bản Ghi Hoàn Tiền</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form action="{% url 'dashboard:payment_refund' pk=p.pk %}" method="POST">
+                                    {% csrf_token %}
+                                    <div class="modal-body p-4 text-start">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Đơn hàng:</label>
+                                            <input type="text" class="form-control" value="#{{ p.order.order_number }} - {{ p.order.sender_name }}" readonly>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Số tiền hoàn (Tối đa: {{ p.amount|currency }}):</label>
+                                            <input type="number" name="amount" class="form-control" value="{{ p.amount }}" max="{{ p.amount }}" min="1" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Mã chuyển khoản hoàn tiền:</label>
+                                            <input type="text" name="refund_transaction_code" class="form-control" placeholder="Mã giao dịch ngân hàng chuyển trả">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Lý do hoàn tiền *:</label>
+                                            <textarea name="reason" class="form-control" rows="3" placeholder="Ghi rõ lý do hoàn..." required></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-top">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                                        <button type="submit" class="btn btn-danger">Xác nhận hoàn tiền</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-5">
+                            Chưa có giao dịch thanh toán nào khớp với bộ lọc.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Phân trang -->
+{% if page_obj.has_other_pages %}
+    <nav class="mt-4 d-flex justify-content-center">
+        <ul class="pagination pagination-sm">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?{% query_transform page=page_obj.previous_page_number %}">Trước</a></li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?{% query_transform page=num %}">{{ num }}</a>
+                </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?{% query_transform page=page_obj.next_page_number %}">Sau</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

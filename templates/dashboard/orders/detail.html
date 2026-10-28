@@ -1,0 +1,258 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Đơn Hàng #{{ order.order_number }}{% endblock %}
+{% block page_title %}Xử Lý Đơn Hàng #{{ order.order_number }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <a href="{% url 'dashboard:order_list' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách đơn
+    </a>
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard:order_print_florist' pk=order.pk %}" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-printer me-1"></i> In Phiếu Chuẩn Bị Hoa (Thợ Cắm)
+        </a>
+        <a href="{% url 'dashboard:order_print_bill' pk=order.pk %}" target="_blank" class="btn btn-sm btn-flora">
+            <i class="bi bi-receipt me-1"></i> In Hóa Đơn / Phiếu Giao Hàng
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Cột Trái: Trạng thái & Chi tiết hàng hóa -->
+    <div class="col-lg-8">
+        <!-- Chuyển trạng thái đơn hàng -->
+        <div class="dash-card p-4 mb-4">
+            <h5 class="font-serif fw-bold mb-3">Trạng Thái Xử Lý Đơn Hàng</h5>
+            <div class="d-flex align-items-center gap-3 mb-3 p-3 bg-light rounded-3">
+                <div>Trạng thái hiện tại: {{ order.status|order_status_badge }}</div>
+                <div>Thanh toán: {{ order.payment_status|payment_status_badge }}</div>
+            </div>
+
+            <form action="{% url 'dashboard:order_detail' pk=order.pk %}" method="POST" class="border-top pt-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_status">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label fs-7 fw-semibold">Chuyển sang bước tiếp theo:</label>
+                        <select name="status" class="form-select form-select-sm">
+                            {% for s_val, s_name in statuses %}
+                                <option value="{{ s_val }}" {% if order.status == s_val %}selected{% endif %}>{{ s_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fs-7 fw-semibold">Ghi chú thao tác:</label>
+                        <input type="text" name="note" class="form-control form-control-sm" placeholder="Ví dụ: Đã cắm xong hoa, bàn giao shipper...">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-sm btn-flora w-100">Cập nhật</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Danh sách hoa & phụ kiện trong đơn -->
+        <div class="dash-card p-4 mb-4">
+            <h5 class="font-serif fw-bold mb-3">Chi Tiết Sản Phẩm Hoa Đặt Hàng</h5>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light fs-7">
+                        <tr>
+                            <th>Mẫu hoa</th>
+                            <th>Đơn giá tại thời điểm đặt</th>
+                            <th>Số lượng</th>
+                            <th class="text-end">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items %}
+                            <tr>
+                                <td>
+                                    <strong class="d-block text-dark">{{ item.product_name }}</strong>
+                                    <small class="text-muted">{{ item.variant_name }} (SKU: {{ item.sku }})</small>
+                                    {% if item.accessories.first() %}
+                                        <div class="mt-1 fs-7">
+                                            <span class="text-success fw-semibold"><i class="bi bi-plus-circle me-1"></i> Phụ kiện:</span>
+                                            {% for acc in item.accessories %}
+                                                <span class="badge bg-light text-dark border">{{ acc.quantity }}x {{ acc.accessory_name }} (+{{ acc.subtotal|currency }})</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.unit_price|currency }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td class="text-end fw-bold text-success">{{ item.subtotal|currency }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Thiệp chúc mừng & Cá nhân hóa -->
+        <div class="dash-card p-4 mb-4">
+            <h5 class="font-serif fw-bold mb-3"><i class="bi bi-envelope-heart text-danger me-2"></i> Lời Nhắn Trên Thiệp</h5>
+            <div class="p-3 bg-light rounded-3">
+                <p class="fst-italic text-dark fs-6 mb-2">"{{ order.card_message|default('(Không có lời nhắn thiệp)') }}"</p>
+                <div class="d-flex justify-content-between align-items-center fs-7 text-muted border-top pt-2">
+                    <span>Tên người gửi ghi trên thiệp: <strong class="text-dark">{{ order.card_sender_name|default(order.sender_name) }}</strong></span>
+                    <div>
+                        {% if order.is_anonymous %}
+                            <span class="badge bg-danger"><i class="bi bi-eye-slash-fill me-1"></i> KHÁCH CHỌN ẨN DANH VỚI NGƯỜI NHẬN</span>
+                            <small class="d-block text-muted">Nhân viên không được tiết lộ thông tin người đặt cho người nhận!</small>
+                        {% else %}
+                            <span class="badge bg-light text-dark border">Công khai người gửi</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ghi chú nội bộ nhân viên -->
+        <div class="dash-card p-4">
+            <h5 class="font-serif fw-bold mb-3"><i class="bi bi-journal-text me-2"></i> Ghi Chú Xử Lý Nội Bộ</h5>
+            <form action="{% url 'dashboard:order_detail' pk=order.pk %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_notes">
+                <div class="mb-3">
+                    <textarea name="internal_notes" class="form-control" rows="3" placeholder="Ghi chú dành riêng cho nhân viên và quản trị viên...">{{ order.internal_notes }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-sm btn-flora">Lưu ghi chú nội bộ</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cột Phải: Giao nhận, Tài chính & Thanh toán -->
+    <div class="col-lg-4">
+        <!-- Thông tin Người Đặt & Người Nhận -->
+        <div class="dash-card p-4 mb-4">
+            <h6 class="font-serif fw-bold mb-3">Khách Hàng & Giao Nhận</h6>
+            
+            <div class="mb-3 pb-3 border-bottom">
+                <span class="badge bg-light text-primary border mb-1">Người Đặt Hàng</span>
+                <div class="fw-bold">{{ order.sender_name }}</div>
+                <div class="fs-7 text-muted"><i class="bi bi-telephone me-1"></i> {{ order.sender_phone }}</div>
+                <div class="fs-7 text-muted"><i class="bi bi-envelope me-1"></i> {{ order.sender_email }}</div>
+            </div>
+
+            <div class="mb-3 pb-3 border-bottom">
+                <span class="badge bg-light text-danger border mb-1">Người Nhận Hoa</span>
+                <div class="fw-bold">{{ order.recipient_name }}</div>
+                <div class="fs-7 text-muted"><i class="bi bi-telephone me-1"></i> {{ order.recipient_phone }}</div>
+                <div class="fs-7 text-muted"><i class="bi bi-geo-alt me-1"></i> {{ order.delivery_address }}</div>
+            </div>
+
+            <div>
+                <span class="badge bg-light text-dark border mb-1">Thời Gian Giao Hoa</span>
+                <div class="fw-bold text-success">{{ order.delivery_date|date("d/m/Y") }}</div>
+                <div class="fs-7 text-muted">Khung giờ: <strong>{{ order.delivery_time_slot }}</strong></div>
+                <div class="fs-7 text-muted">Hình thức: {{ order.get_delivery_method_display }}</div>
+            </div>
+        </div>
+
+        <!-- Tài chính & Đối soát thanh toán -->
+        <div class="dash-card p-4 mb-4">
+            <h6 class="font-serif fw-bold mb-3">Tài Chính Đơn Hàng</h6>
+
+            <div class="d-flex justify-content-between py-1 border-bottom fs-7">
+                <span class="text-muted">Tiền hoa:</span>
+                <span>{{ order.flowers_subtotal|currency }}</span>
+            </div>
+            {% if order.accessories_subtotal > 0 %}
+            <div class="d-flex justify-content-between py-1 border-bottom fs-7">
+                <span class="text-muted">Tiền phụ kiện:</span>
+                <span>{{ order.accessories_subtotal|currency }}</span>
+            </div>
+            {% endif %}
+            {% if order.discount_amount > 0 %}
+            <div class="d-flex justify-content-between py-1 border-bottom fs-7 text-danger">
+                <span>Giảm giá ({{ order.coupon_code_snapshot }}):</span>
+                <span>-{{ order.discount_amount|currency }}</span>
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-between py-1 border-bottom fs-7">
+                <span class="text-muted">Phí giao hàng:</span>
+                <span>{{ order.shipping_fee|currency }}</span>
+            </div>
+            <div class="d-flex justify-content-between pt-2 mb-3">
+                <span class="fw-bold">Tổng thanh toán:</span>
+                <span class="fw-bold text-success fs-5">{{ order.total_amount|currency }}</span>
+            </div>
+
+            <!-- Thao tác đối soát -->
+            {% if payment %}
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="fw-semibold fs-7 mb-1">Phương thức: {{ payment.get_payment_method_display }}</div>
+                    <div class="fs-7 mb-2">Trạng thái: {{ payment.status|payment_status_badge }}</div>
+
+                    {% if payment.proof_image %}
+                        <div class="mb-3">
+                            <label class="fs-7 fw-semibold d-block">Ảnh biên lai khách gửi:</label>
+                            <a href="{% url 'payments:view_proof' transaction_id=payment.id %}" target="_blank" class="btn btn-sm btn-outline-primary w-100 mb-2">
+                                <i class="bi bi-eye me-1"></i> Xem ảnh chứng từ
+                            </a>
+                        </div>
+                    {% endif %}
+
+                    {% if payment.status != 'PAID' %}
+                        {% if payment.payment_method == 'BANK_TRANSFER' %}
+                            <div class="d-flex gap-2">
+                                <form action="{% url 'dashboard:payment_verify' pk=payment.pk %}" method="POST" class="flex-grow-1">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit" class="btn btn-sm btn-success w-100">
+                                        <i class="bi bi-check-lg"></i> Duyệt tiền
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectProofModal">
+                                    Từ chối
+                                </button>
+                            </div>
+                        {% elif payment.payment_method == 'COD' %}
+                            <form action="{% url 'dashboard:payment_verify' pk=payment.pk %}" method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="cod_confirm">
+                                <button type="submit" class="btn btn-sm btn-success w-100">
+                                    <i class="bi bi-cash me-1"></i> Xác nhận đã thu tiền COD
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-success p-2 mb-0 fs-7">
+                            <i class="bi bi-check-circle-fill me-1"></i> Đã xác nhận thu tiền bởi {{ payment.verified_by|default('Hệ thống') }} lúc {{ payment.verified_at|date("d/m/Y H:i") }}.
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Từ Chối Chứng Từ -->
+{% if payment and payment.payment_method == 'BANK_TRANSFER' %}
+<div class="modal fade" id="rejectProofModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title font-serif text-danger">Từ Chối Chứng Từ Thanh Toán</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'dashboard:payment_verify' pk=payment.pk %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reject">
+                <div class="modal-body p-4">
+                    <label class="form-label fw-semibold">Lý do từ chối biên lai:</label>
+                    <textarea name="rejection_reason" class="form-control" rows="3" placeholder="Ví dụ: Chưa nhận được biến động số dư ngân hàng, số tiền chưa khớp..." required></textarea>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

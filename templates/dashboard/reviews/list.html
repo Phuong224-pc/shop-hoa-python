@@ -1,0 +1,101 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Quản Lý Đánh Giá Khách Hàng{% endblock %}
+{% block page_title %}Kiểm Duyệt Đánh Giá Sản Phẩm{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-serif fw-bold mb-1">Đánh Giá Sản Phẩm Hoa</h4>
+        <small class="text-muted">Chỉ hiển thị đánh giá từ khách hàng đã có đơn hoàn tất</small>
+    </div>
+</div>
+
+<!-- Bộ lọc trạng thái -->
+<div class="card p-3 border-0 shadow-sm rounded-4 mb-4 bg-white">
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard:review_list' %}" class="btn btn-sm {% if not current_status %}btn-flora{% else %}btn-outline-secondary{% endif %}">
+            Tất cả đánh giá
+        </a>
+        <a href="?status=PENDING" class="btn btn-sm {% if current_status == 'PENDING' %}btn-warning text-dark{% else %}btn-outline-warning text-dark{% endif %}">
+            Chờ duyệt
+        </a>
+        <a href="?status=APPROVED" class="btn btn-sm {% if current_status == 'APPROVED' %}btn-success{% else %}btn-outline-success{% endif %}">
+            Đã duyệt hiển thị
+        </a>
+        <a href="?status=HIDDEN" class="btn btn-sm {% if current_status == 'HIDDEN' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+            Tạm ẩn
+        </a>
+    </div>
+</div>
+
+<!-- Bảng đánh giá -->
+<div class="dash-card">
+    <div class="table-responsive">
+        <table class="table dash-table mb-0 fs-7">
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th>Khách hàng</th>
+                    <th>Số sao</th>
+                    <th>Nội dung nhận xét</th>
+                    <th>Thời điểm</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in page_obj %}
+                    <tr>
+                        <td>
+                            <strong class="d-block">{{ r.product.name }}</strong>
+                            <small class="text-muted">Đơn: #{{ r.order.order_number }}</small>
+                        </td>
+                        <td>{{ r.user.first_name|default(r.user.username) }}</td>
+                        <td>
+                            <span class="text-warning fw-bold"><i class="bi bi-star-fill"></i> {{ r.rating }}</span>
+                        </td>
+                        <td>
+                            <p class="mb-1 text-dark">{{ r.comment }}</p>
+                            {% if r.admin_response %}
+                                <small class="text-success d-block"><strong>Shop phản hồi:</strong> {{ r.admin_response }}</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">{{ r.created_at|date("d/m/Y H:i") }}</td>
+                        <td>
+                            {% if r.status == 'APPROVED' %}
+                                <span class="badge bg-success">Đã duyệt</span>
+                            {% elif r.status == 'PENDING' %}
+                                <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Tạm ẩn</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if r.status != 'APPROVED' %}
+                                <form action="{% url 'dashboard:review_moderate' pk=r.pk %}" method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit" class="btn btn-sm btn-outline-success py-0 me-1">Duyệt</button>
+                                </form>
+                            {% endif %}
+                            {% if r.status != 'HIDDEN' %}
+                                <form action="{% url 'dashboard:review_moderate' pk=r.pk %}" method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="hide">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 me-1">Ẩn</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">Chưa có đánh giá nào.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

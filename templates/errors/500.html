@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static core_tags %}
+
+{% block title %}500 - Lỗi Máy Chủ Nội Bộ - {{ shop_setting.shop_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center my-5">
+    <div class="mb-4">
+        <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 80px;"></i>
+    </div>
+    <h1 class="font-serif display-4 fw-bold text-dark mb-2">500</h1>
+    <h3 class="font-serif mb-3">Đã Xảy Ra Lỗi Hệ Thống</h3>
+    <p class="text-muted mx-auto mb-4" style="max-width: 500px;">
+        Đã có sự cố kỹ thuật xảy ra trong quá trình xử lý yêu cầu của bạn. Đội ngũ kỹ thuật đã được thông báo để khắc phục ngay lập tức.
+    </p>
+    <a href="{% url 'catalog:home' %}" class="btn btn-flora btn-lg">
+        <i class="bi bi-house-door me-1"></i> Quay về trang chủ
+    </a>
+</div>
+{% endblock %}

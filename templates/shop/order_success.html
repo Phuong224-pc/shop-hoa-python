@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static core_tags %}
+
+{% block title %}Đặt Hàng Thành Công #{{ order.order_number }} - {{ shop_setting.shop_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Success Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white text-center mb-4">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 64px;"></i>
+                </div>
+                <h2 class="font-serif fs-2 mb-2">Đặt Hoa Thành Công!</h2>
+                <p class="text-muted mb-3">Cảm ơn bạn đã tin chọn <strong>{{ shop_setting.shop_name }}</strong> để trao gửi yêu thương.</p>
+                <div class="p-3 bg-light rounded-3 d-inline-block mx-auto mb-4 border">
+                    Mã đơn hàng của bạn: <strong class="text-success fs-5">#{{ order.order_number }}</strong>
+                </div>
+
+                <div class="row g-3 text-start mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 h-100">
+                            <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-clock me-1 text-primary"></i> Lịch Giao Nhận Hoa:</h6>
+                            <div class="fs-7 text-muted">Ngày giao: <strong class="text-dark">{{ order.delivery_date|date("d/m/Y") }}</strong></div>
+                            <div class="fs-7 text-muted">Khung giờ: <strong class="text-dark">{{ order.delivery_time_slot }}</strong></div>
+                            <div class="fs-7 text-muted">Hình thức: <strong class="text-dark">{{ order.get_delivery_method_display }}</strong></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 h-100">
+                            <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-geo-alt me-1 text-danger"></i> Người Nhận Hoa:</h6>
+                            <div class="fs-7 text-muted">Người nhận: <strong class="text-dark">{{ order.recipient_name }}</strong></div>
+                            <div class="fs-7 text-muted">Điện thoại: <strong class="text-dark">{{ order.recipient_phone }}</strong></div>
+                            <div class="fs-7 text-muted text-truncate">Địa chỉ: <strong class="text-dark">{{ order.delivery_address }}</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chuyển khoản VietQR nếu chọn Chuyển khoản -->
+                {% if payment.payment_method == 'BANK_TRANSFER' %}
+                    <div class="card border border-success p-4 rounded-4 bg-light mb-4 text-start">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="bi bi-qr-code fs-3 text-success"></i>
+                            <div>
+                                <h5 class="font-serif fw-bold mb-0 text-success">Thông Tin Chuyển Khoản Ngân Hàng (VietQR)</h5>
+                                <small class="text-muted">Quét mã QR bằng App ngân hàng để thông tin tự động điền chính xác</small>
+                            </div>
+                        </div>
+
+                        <div class="row g-4 align-items-center">
+                            {% if vietqr_url %}
+                            <div class="col-md-5 text-center">
+                                <img src="{{ vietqr_url }}" alt="VietQR Thanh Toán" class="img-fluid rounded-3 border bg-white p-2 shadow-sm" style="max-height: 240px;">
+                                <small class="text-muted d-block mt-2">Mã QR chứa sẵn số tiền và mã đơn</small>
+                            </div>
+                            {% endif %}
+                            <div class="col-md-7">
+                                <div class="p-3 bg-white rounded-3 border">
+                                    <div class="d-flex justify-content-between py-1 border-bottom fs-7">
+                                        <span class="text-muted">Ngân hàng:</span>
+                                        <strong>{{ setting.bank_name }} ({{ setting.bank_code }})</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom fs-7">
+                                        <span class="text-muted">Số tài khoản:</span>
+                                        <strong class="text-primary fs-6">{{ setting.bank_account_no }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom fs-7">
+                                        <span class="text-muted">Chủ tài khoản:</span>
+                                        <strong>{{ setting.bank_account_name }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1 border-bottom fs-7">
+                                        <span class="text-muted">Số tiền:</span>
+                                        <strong class="text-danger fs-6">{{ order.total_amount|currency }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between py-1 fs-7">
+                                        <span class="text-muted">Nội dung chuyển:</span>
+                                        <strong class="text-success">FLORA {{ order.order_number }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form gửi ảnh biên lai chuyển khoản -->
+                        <div class="mt-4 pt-3 border-top">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-receipt me-1"></i> Gửi ảnh chụp biên lai chuyển khoản:</h6>
+                            <p class="fs-7 text-muted mb-2">Sau khi chuyển khoản thành công, bạn có thể tải ảnh biên lai lên để nhân viên đối soát và chuẩn bị hoa ngay.</p>
+                            <form action="{% url 'payments:upload_proof' order_number=order.order_number %}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+                                {% csrf_token %}
+                                <input type="file" name="proof_image" class="form-control form-control-sm" accept="image/*" required>
+                                <button type="submit" class="btn btn-sm btn-flora text-nowrap">
+                                    <i class="bi bi-upload me-1"></i> Gửi chứng từ
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- COD -->
+                    <div class="alert alert-info text-start rounded-4 mb-4">
+                        <i class="bi bi-cash-stack fs-4 me-2 align-middle"></i>
+                        <strong>Hình thức thanh toán:</strong> Tiền mặt khi nhận hoa (COD). Số tiền thanh toán: <strong>{{ order.total_amount|currency }}</strong>. Nhân viên giao hàng sẽ thu tiền trực tiếp khi giao hoa đến người nhận.
+                    </div>
+                {% endif %}
+
+                <!-- Buttons -->
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'orders:order_detail' order_number=order.order_number %}" class="btn btn-flora">
+                        <i class="bi bi-receipt me-1"></i> Xem chi tiết đơn hàng
+                    </a>
+                    <a href="{% url 'catalog:home' %}" class="btn btn-flora-outline">
+                        Về trang chủ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

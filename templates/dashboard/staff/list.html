@@ -1,0 +1,116 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Quản Lý Nhân Viên & Phân Quyền{% endblock %}
+{% block page_title %}Nhân Viên & Phân Quyền Hệ Thống{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-serif fw-bold mb-1">Đội Ngũ Nhân Viên Quản Trị</h4>
+        <small class="text-muted">Quản trị viên, nhân viên đơn hàng, kho và nội dung</small>
+    </div>
+    <button class="btn btn-flora" data-bs-toggle="collapse" data-bs-target="#addStaffCollapse">
+        <i class="bi bi-person-plus-fill me-1"></i> Tạo Tài Khoản Nhân Viên
+    </button>
+</div>
+
+<!-- Form Thêm nhân viên (Collapse) -->
+<div class="collapse mb-4" id="addStaffCollapse">
+    <div class="card p-4 border-0 shadow-sm rounded-4 bg-white">
+        <h5 class="font-serif fw-bold mb-3">Tạo Tài Khoản Nhân Viên Mới</h5>
+        <form action="{% url 'dashboard:staff_save' %}" method="POST">
+            {% csrf_token %}
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Tên đăng nhập *</label>
+                    <input type="text" name="username" class="form-control form-control-sm" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Họ và tên *</label>
+                    <input type="text" name="full_name" class="form-control form-control-sm" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Email *</label>
+                    <input type="email" name="email" class="form-control form-control-sm" required>
+                </div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Mật khẩu khởi tạo *</label>
+                    <input type="password" name="password" class="form-control form-control-sm" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Vai trò phân quyền *</label>
+                    <select name="role" class="form-select form-select-sm">
+                        {% for r_code, r_label in roles %}
+                            {% if r_code != 'CUSTOMER' %}
+                                <option value="{{ r_code }}">{{ r_label }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-flora">Tạo tài khoản</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#addStaffCollapse">Hủy</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bảng nhân viên -->
+<div class="dash-card">
+    <div class="table-responsive">
+        <table class="table dash-table mb-0">
+            <thead>
+                <tr>
+                    <th>Nhân viên</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Vai trò hiện tại</th>
+                    <th>Thay đổi vai trò</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in staff_users %}
+                    <tr>
+                        <td>
+                            <strong class="d-block text-dark">{{ u.first_name|default(u.username) }}</strong>
+                            <small class="text-muted font-monospace">@{{ u.username }}</small>
+                            {% if u.is_superuser %}
+                                <span class="badge bg-danger ms-1">Superuser</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ u.email }}</td>
+                        <td>{{ u.profile.phone|default('-') }}</td>
+                        <td>
+                            <span class="badge bg-primary">{{ u.profile.get_role_display }}</span>
+                        </td>
+                        <td>
+                            <form action="{% url 'dashboard:staff_save' %}" method="POST" class="d-flex gap-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ u.id }}">
+                                <select name="role" class="form-select form-select-sm" style="width: 170px;">
+                                    {% for r_code, r_label in roles %}
+                                        <option value="{{ r_code }}" {% if u.profile.role == r_code %}selected{% endif %}>{{ r_label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Lưu</button>
+                            </form>
+                        </td>
+                        <td>
+                            {% if u.is_active and not u.profile.is_locked %}
+                                <span class="badge bg-success">Hoạt động</span>
+                            {% else %}
+                                <span class="badge bg-danger">Đã khóa</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

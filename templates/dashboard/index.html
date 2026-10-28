@@ -1,0 +1,383 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Tổng Quan & Báo Cáo Thống Kê{% endblock %}
+{% block page_title %}Tổng Quan Kinh Doanh{% endblock %}
+
+{% block dashboard_content %}
+<!-- Bộ lọc thời gian -->
+<div class="card p-3 border-0 shadow-sm rounded-4 mb-4 bg-white">
+    <form action="{% url 'dashboard:overview' %}" method="GET" class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <span class="fw-semibold fs-7 text-muted me-1"><i class="bi bi-funnel"></i> Kỳ báo cáo:</span>
+            <div class="btn-group btn-group-sm">
+                <a href="?range=today" class="btn btn-outline-secondary {% if range_filter == 'today' %}active{% endif %}">Hôm nay</a>
+                <a href="?range=7d" class="btn btn-outline-secondary {% if range_filter == '7d' %}active{% endif %}">7 ngày</a>
+                <a href="?range=30d" class="btn btn-outline-secondary {% if range_filter == '30d' %}active{% endif %}">30 ngày</a>
+                <a href="?range=this_month" class="btn btn-outline-secondary {% if range_filter == 'this_month' %}active{% endif %}">Tháng này</a>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <span class="fs-7 text-muted">Từ:</span>
+            <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date|date('Y-m-d') }}">
+            <span class="fs-7 text-muted">Đến:</span>
+            <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date|date('Y-m-d') }}">
+            <input type="hidden" name="range" value="custom">
+            <button type="submit" class="btn btn-sm btn-flora">Lọc</button>
+        </div>
+    </form>
+</div>
+
+<!-- 1. HÀNG CHỈ SỐ DOANH THU & TÀI CHÍNH -->
+<div class="row g-3 mb-4">
+    <!-- Doanh thu bán hàng -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="dash-stat-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="stat-label">Doanh Thu Thuần</span>
+                <div class="stat-icon-wrapper bg-success-subtle text-success">
+                    <i class="bi bi-cash-coin"></i>
+                </div>
+            </div>
+            <div class="stat-val text-success">{{ sales_revenue|currency }}</div>
+            <small class="text-muted fs-8 d-block">Đơn hoàn tất & đã thanh toán</small>
+        </div>
+    </div>
+
+    <!-- Tiền đã thu -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="dash-stat-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="stat-label">Tiền Thực Thu</span>
+                <div class="stat-icon-wrapper bg-primary-subtle text-primary">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </div>
+            <div class="stat-val text-primary">{{ net_money_collected|currency }}</div>
+            <small class="text-muted fs-8 d-block">Giao dịch PAID trừ tiền hoàn</small>
+        </div>
+    </div>
+
+    <!-- Tổng đơn hàng -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="dash-stat-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="stat-label">Tổng Đơn Hàng</span>
+                <div class="stat-icon-wrapper bg-info-subtle text-info">
+                    <i class="bi bi-receipt-cutoff"></i>
+                </div>
+            </div>
+            <div class="stat-val text-info">{{ total_orders_count }}</div>
+            <small class="text-muted fs-8 d-block">Hoàn tất: <strong>{{ orders_completed_count }}</strong> | Đã hủy: <strong>{{ orders_cancelled_count }}</strong></small>
+        </div>
+    </div>
+
+    <!-- Giá trị đơn TB (AOV) -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="dash-stat-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="stat-label">Giá Trị Đơn TB (AOV)</span>
+                <div class="stat-icon-wrapper bg-warning-subtle text-warning">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+            </div>
+            <div class="stat-val text-dark">{{ aov|currency }}</div>
+            <small class="text-muted fs-8 d-block">Doanh thu / Đơn hoàn tất</small>
+        </div>
+    </div>
+</div>
+
+<!-- 2. HÀNG CHỈ SỐ VẬN HÀNH & CẢNH BÁO -->
+<div class="row g-3 mb-4">
+    <!-- Đơn cần giao / chuẩn bị hôm nay -->
+    <div class="col-6 col-md-3">
+        <a href="{% url 'dashboard:delivery_calendar' %}" class="text-decoration-none">
+            <div class="dash-stat-card border-start border-4 border-primary">
+                <span class="stat-label">Cần Chuẩn Bị & Giao Hôm Nay</span>
+                <div class="stat-val text-primary">{{ today_orders_count }}</div>
+                <small class="text-primary fw-semibold">Xem lịch giao hoa <i class="bi bi-arrow-right"></i></small>
+            </div>
+        </a>
+    </div>
+
+    <!-- Chờ đối soát ngân hàng -->
+    <div class="col-6 col-md-3">
+        <a href="{% url 'dashboard:payment_list' %}?status=WAITING_VERIFICATION" class="text-decoration-none">
+            <div class="dash-stat-card border-start border-4 border-warning">
+                <span class="stat-label">Chờ Đối Soát Chuyển Khoản</span>
+                <div class="stat-val text-warning">{{ waiting_transfers_count }}</div>
+                <small class="text-warning fw-semibold">Duyệt biên lai <i class="bi bi-arrow-right"></i></small>
+            </div>
+        </a>
+    </div>
+
+    <!-- Cảnh báo sắp hết hàng -->
+    <div class="col-6 col-md-3">
+        <a href="{% url 'dashboard:inventory_list' %}?low_stock=1" class="text-decoration-none">
+            <div class="dash-stat-card border-start border-4 border-danger">
+                <span class="stat-label">Cảnh Báo Tồn Kho Thấp</span>
+                <div class="stat-val text-danger">{{ low_stock_variants_count }}</div>
+                <small class="text-danger fw-semibold">Kiểm kê nhập kho <i class="bi bi-arrow-right"></i></small>
+            </div>
+        </a>
+    </div>
+
+    <!-- Số hoa đã bán -->
+    <div class="col-6 col-md-3">
+        <div class="dash-stat-card border-start border-4 border-success">
+            <span class="stat-label">Số Lượng Món Hoa Đã Bán</span>
+            <div class="stat-val text-success">{{ total_items_sold }}</div>
+            <small class="text-muted">Khách mua hàng: <strong>{{ unique_buyers_count }}</strong></small>
+        </div>
+    </div>
+</div>
+
+<!-- 3. BIỂU ĐỒ THỐNG KÊ (CHART.JS) -->
+<div class="row g-4 mb-4">
+    <!-- Doanh thu theo thời gian -->
+    <div class="col-lg-8">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <h5><i class="bi bi-graph-up text-success me-2"></i> Xu Hướng Doanh Thu Theo Ngày</h5>
+            </div>
+            <div class="p-3">
+                <canvas id="revenueTrendChart" style="max-height: 320px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trạng thái đơn hàng -->
+    <div class="col-lg-4">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <h5><i class="bi bi-pie-chart text-primary me-2"></i> Đơn Hàng Theo Trạng Thái</h5>
+            </div>
+            <div class="p-3 d-flex flex-column align-items-center justify-content-center">
+                <canvas id="orderStatusChart" style="max-height: 260px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. BIỂU ĐỒ DANH MỤC & TOP SẢN PHẨM -->
+<div class="row g-4 mb-4">
+    <!-- Doanh thu theo danh mục chính (không cộng trùng) -->
+    <div class="col-lg-6">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <h5><i class="bi bi-bar-chart-line text-warning me-2"></i> Doanh Thu Theo Danh Mục Chính</h5>
+            </div>
+            <div class="p-3">
+                <canvas id="categoryRevenueChart" style="max-height: 280px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 5 Mẫu hoa bán chạy -->
+    <div class="col-lg-6">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <h5><i class="bi bi-award-fill text-danger me-2"></i> Top 5 Mẫu Hoa Bán Chạy Nhất</h5>
+            </div>
+            <div class="p-3">
+                <ul class="list-group list-group-flush">
+                    {% for p in top_products %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                            <div>
+                                <span class="badge bg-success-subtle text-success me-2">#{{ loop.index }}</span>
+                                <strong class="text-dark">{{ p.product_name }}</strong>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-light text-dark border">{{ p.sold_qty }} đã bán</span>
+                                <div class="fw-bold text-success fs-7 mt-1">{{ p.total_sales|currency }}</div>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="list-group-item text-muted text-center py-4">Chưa có dữ liệu bán hàng trong kỳ này.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 5. BẢNG ĐƠN HÀNG MỚI NHẤT -->
+<div class="dash-card">
+    <div class="dash-card-header">
+        <h5><i class="bi bi-clock-history me-2"></i> Đơn Hàng Mới Tiếp Nhận</h5>
+        <a href="{% url 'dashboard:order_list' %}" class="btn btn-sm btn-flora-outline">Xem tất cả đơn</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table dash-table mb-0">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Thời điểm đặt</th>
+                    <th>Người đặt</th>
+                    <th>Người nhận & Lịch giao</th>
+                    <th>Trạng thái đơn</th>
+                    <th>Thanh toán</th>
+                    <th>Tổng tiền</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in recent_orders %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'dashboard:order_detail' pk=o.pk %}" class="fw-bold text-success text-decoration-none">
+                                #{{ o.order_number }}
+                            </a>
+                        </td>
+                        <td class="text-muted fs-7">{{ o.created_at|date("d/m/Y H:i") }}</td>
+                        <td>
+                            <strong>{{ o.sender_name }}</strong>
+                            <small class="text-muted d-block">{{ o.sender_phone }}</small>
+                        </td>
+                        <td>
+                            <div>{{ o.recipient_name }}</div>
+                            <small class="text-muted">{{ o.delivery_date|date("d/m/Y") }} ({{ o.delivery_time_slot }})</small>
+                        </td>
+                        <td>{{ o.status|order_status_badge }}</td>
+                        <td>{{ o.payment_status|payment_status_badge }}</td>
+                        <td class="fw-bold text-success">{{ o.total_amount|currency }}</td>
+                        <td>
+                            <a href="{% url 'dashboard:order_detail' pk=o.pk %}" class="btn btn-sm btn-outline-secondary">
+                                Chi tiết
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">Chưa có đơn hàng nào trong hệ thống.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Dữ liệu an toàn cho Chart.js -->
+{{ chart_dates|json_script("chartDatesData") }}
+{{ chart_revenue|json_script("chartRevenueData") }}
+{{ chart_cat_labels|json_script("chartCatLabelsData") }}
+{{ chart_cat_data|json_script("chartCatData") }}
+<div id="orderStatusData"
+     data-pending="{{ orders_pending_count|default(0) }}"
+     data-confirmed="{{ orders_confirmed_count|default(0) }}"
+     data-preparing="{{ orders_preparing_count|default(0) }}"
+     data-ready="{{ orders_ready_count|default(0) }}"
+     data-delivering="{{ orders_delivering_count|default(0) }}"
+     data-completed="{{ orders_completed_count|default(0) }}"
+     data-cancelled="{{ orders_cancelled_count|default(0) }}"
+     style="display:none;"></div>
+
+<!-- Script vẽ Chart.js chuẩn JavaScript không phát sinh lỗi cú pháp -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const datesEl = document.getElementById('chartDatesData');
+    const revEl = document.getElementById('chartRevenueData');
+    const catLabelsEl = document.getElementById('chartCatLabelsData');
+    const catDataEl = document.getElementById('chartCatData');
+    const statusEl = document.getElementById('orderStatusData');
+
+    const chartDates = datesEl ? JSON.parse(datesEl.textContent) : [];
+    const chartRevenue = revEl ? JSON.parse(revEl.textContent) : [];
+    const chartCatLabels = catLabelsEl ? JSON.parse(catLabelsEl.textContent) : [];
+    const chartCatData = catDataEl ? JSON.parse(catDataEl.textContent) : [];
+
+    // 1. Biểu đồ Doanh thu theo ngày
+    const revCanvas = document.getElementById('revenueTrendChart');
+    if (revCanvas) {
+        new Chart(revCanvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: chartDates,
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: chartRevenue,
+                    borderColor: '#234D3C',
+                    backgroundColor: 'rgba(35, 77, 60, 0.08)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2.5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(val) { return Number(val).toLocaleString('vi-VN') + ' đ'; }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Biểu đồ Trạng thái đơn hàng
+    const statusCanvas = document.getElementById('orderStatusChart');
+    if (statusCanvas && statusEl) {
+        new Chart(statusCanvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Chờ xác nhận', 'Đã xác nhận', 'Chuẩn bị hoa', 'Sẵn sàng', 'Đang giao', 'Hoàn tất', 'Đã hủy'],
+                datasets: [{
+                    data: [
+                        parseInt(statusEl.dataset.pending, 10) || 0,
+                        parseInt(statusEl.dataset.confirmed, 10) || 0,
+                        parseInt(statusEl.dataset.preparing, 10) || 0,
+                        parseInt(statusEl.dataset.ready, 10) || 0,
+                        parseInt(statusEl.dataset.delivering, 10) || 0,
+                        parseInt(statusEl.dataset.completed, 10) || 0,
+                        parseInt(statusEl.dataset.cancelled, 10) || 0
+                    ],
+                    backgroundColor: ['#F59E0B', '#3B82F6', '#8B5CF6', '#10B981', '#6366F1', '#059669', '#EF4444']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    // 3. Biểu đồ Doanh thu theo danh mục
+    const catCanvas = document.getElementById('categoryRevenueChart');
+    if (catCanvas) {
+        new Chart(catCanvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: chartCatLabels,
+                datasets: [{
+                    label: 'Doanh thu',
+                    data: chartCatData,
+                    backgroundColor: '#2E5C4A',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(val) { return (Number(val) / 1000).toLocaleString('vi-VN') + 'k'; }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

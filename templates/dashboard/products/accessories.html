@@ -1,0 +1,191 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Quản Lý Phụ Kiện Kèm Theo{% endblock %}
+{% block page_title %}Phụ Kiện & Quà Tặng Kèm Hoa{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-serif fw-bold mb-1">Danh Sách Phụ Kiện Bán Kèm</h4>
+        <small class="text-muted">Quản lý thiệp, băng rôn, gấu bông, socola và túi đựng hoa sang trọng</small>
+    </div>
+    <button class="btn btn-flora" data-bs-toggle="modal" data-bs-target="#addAccessoryModal">
+        <i class="bi bi-plus-lg me-1"></i> Thêm Phụ Kiện Mới
+    </button>
+</div>
+
+<div class="dash-card">
+    <div class="table-responsive">
+        <table class="table dash-table mb-0 fs-7">
+            <thead>
+                <tr>
+                    <th style="width: 70px;">Ảnh</th>
+                    <th>Tên phụ kiện</th>
+                    <th>Đơn giá</th>
+                    <th>Tồn kho</th>
+                    <th>Thứ tự</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for acc in accessories %}
+                <tr>
+                    <td>
+                        {% if acc.image %}
+                        <img src="{{ acc.image.url }}" class="rounded-3" style="width: 48px; height: 48px; object-fit: cover;" alt="{{ acc.name }}">
+                        {% else %}
+                        <div class="bg-light text-muted d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px;">
+                            <i class="bi bi-gift fs-5"></i>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong class="text-dark">{{ acc.name }}</strong>
+                        {% if acc.description %}
+                        <div class="text-muted small text-truncate" style="max-width: 280px;">{{ acc.description }}</div>
+                        {% endif %}
+                    </td>
+                    <td><strong class="text-flora-primary">{{ acc.price|currency }}</strong></td>
+                    <td>
+                        {% if acc.stock <= 5 %}
+                        <span class="badge bg-danger-subtle text-danger fw-bold">{{ acc.stock }} cái</span>
+                        {% else %}
+                        <span class="badge bg-light text-dark border">{{ acc.stock }} cái</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ acc.display_order }}</td>
+                    <td>
+                        {% if acc.is_active %}
+                        <span class="badge bg-success-subtle text-success">Đang bán kèm</span>
+                        {% else %}
+                        <span class="badge bg-secondary-subtle text-muted">Đang tắt</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal" data-bs-target="#editAccModal{{ acc.id }}">
+                            <i class="bi bi-pencil"></i> Sửa
+                        </button>
+                    </td>
+                </tr>
+
+                <!-- Modal Sửa Phụ Kiện -->
+                <div class="modal fade" id="editAccModal{{ acc.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content rounded-4 border-0">
+                            <form action="{% url 'dashboard:accessory_save' %}" method="POST" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input type="hidden" name="accessory_id" value="{{ acc.id }}">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title font-serif fw-bold">Sửa Phụ Kiện: {{ acc.name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Tên phụ kiện *</label>
+                                        <input type="text" name="name" class="form-control" value="{{ acc.name }}" required>
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold">Đơn giá (₫) *</label>
+                                            <input type="number" name="price" class="form-control" value="{{ acc.price|floatformat(0) }}" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold">Số lượng tồn kho *</label>
+                                            <input type="number" name="stock" class="form-control" value="{{ acc.stock }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Mô tả chi tiết</label>
+                                        <textarea name="description" class="form-control" rows="2">{{ acc.description }}</textarea>
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold">Thứ tự hiển thị</label>
+                                            <input type="number" name="display_order" class="form-control" value="{{ acc.display_order }}">
+                                        </div>
+                                        <div class="col-6 d-flex align-items-center pt-4">
+                                            <div class="form-check">
+                                                <input type="checkbox" name="is_active" value="1" class="form-check-input" id="actAcc{{ acc.id }}" {% if acc.is_active %}checked{% endif %}>
+                                                <label class="form-check-label fw-semibold" for="actAcc{{ acc.id }}">Cho phép chọn kèm</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Ảnh mới (nếu muốn đổi)</label>
+                                        <input type="file" name="image" class="form-control" accept="image/*">
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0 pt-0">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                    <button type="submit" class="btn btn-flora">Lưu thay đổi</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <tr><td colspan="7" class="text-center py-4 text-muted">Chưa có phụ kiện nào.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Thêm Phụ Kiện Mới -->
+<div class="modal fade" id="addAccessoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-4 border-0">
+            <form action="{% url 'dashboard:accessory_save' %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-serif fw-bold">Thêm Mới Phụ Kiện Đi Kèm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tên phụ kiện *</label>
+                        <input type="text" name="name" class="form-control" placeholder="Ví dụ: Banner In Chữ Chúc Mừng Khai Trương" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Đơn giá (₫) *</label>
+                            <input type="number" name="price" class="form-control" placeholder="30000" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Số lượng tồn kho *</label>
+                            <input type="number" name="stock" class="form-control" value="50" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mô tả ngắn</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Ví dụ: Banner ruy băng lụa cao cấp 1m"></textarea>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Thứ tự hiển thị</label>
+                            <input type="number" name="display_order" class="form-control" value="0">
+                        </div>
+                        <div class="col-6 d-flex align-items-center pt-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_active" value="1" class="form-check-input" id="newAccAct" checked>
+                                <label class="form-check-label fw-semibold" for="newAccAct">Bật hiển thị ngay</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ảnh minh họa</label>
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-flora">Lưu phụ kiện</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

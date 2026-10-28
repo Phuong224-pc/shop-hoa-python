@@ -1,0 +1,178 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Quản Lý Mẫu Hoa{% endblock %}
+{% block page_title %}Danh Sách Mẫu Hoa Tươi{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-serif fw-bold mb-1">Mẫu Hoa Trong Cửa Hàng</h4>
+        <small class="text-muted">Tổng cộng {{ total_count }} mẫu hoa được quản lý</small>
+    </div>
+    <a href="{% url 'dashboard:product_create' %}" class="btn btn-flora">
+        <i class="bi bi-plus-lg me-1"></i> Thêm Mẫu Hoa Mới
+    </a>
+</div>
+
+<!-- Bộ lọc tìm kiếm -->
+<div class="card p-3 border-0 shadow-sm rounded-4 mb-4 bg-white">
+    <form action="{% url 'dashboard:product_list' %}" method="GET" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <input type="text" name="q" class="form-control form-control-sm" placeholder="Tìm theo tên hoặc mã SKU..." value="{{ current_q }}">
+        </div>
+        <div class="col-md-3">
+            <select name="category" class="form-select form-select-sm">
+                <option value="">-- Tất cả danh mục --</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if current_category == cat.id|stringformat("s") %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">-- Trạng thái --</option>
+                <option value="PUBLISHED" {% if current_status == 'PUBLISHED' %}selected{% endif %}>Đang bán</option>
+                <option value="DRAFT" {% if current_status == 'DRAFT' %}selected{% endif %}>Bản nháp</option>
+                <option value="HIDDEN" {% if current_status == 'HIDDEN' %}selected{% endif %}>Tạm ẩn</option>
+                <option value="ARCHIVED" {% if current_status == 'ARCHIVED' %}selected{% endif %}>Lưu trữ</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-sm btn-flora w-100">Lọc sản phẩm</button>
+        </div>
+    </form>
+</div>
+
+<!-- Bảng sản phẩm -->
+<div class="dash-card">
+    <div class="table-responsive">
+        <table class="table dash-table mb-0">
+            <thead>
+                <tr>
+                    <th>Ảnh</th>
+                    <th>Tên mẫu hoa & SKU</th>
+                    <th>Danh mục chính</th>
+                    <th>Kiểu dáng</th>
+                    <th>Giá bán</th>
+                    <th>Tồn kho</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in page_obj %}
+                    <tr>
+                        <td style="width: 70px;">
+                            {% if p.main_image %}
+                                <img src="{{ p.main_image.url }}" alt="{{ p.name }}" class="rounded object-fit-cover" style="width: 54px; height: 54px;">
+                            {% else %}
+                                <div class="bg-light rounded text-center p-2"><i class="bi bi-flower1"></i></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong class="d-block text-dark">{{ p.name }}</strong>
+                            <small class="text-muted">SKU: {{ p.sku }} | {{ p.variants.count() }} biến thể</small>
+                        </td>
+                        <td>{{ p.primary_category.name }}</td>
+                        <td>{{ p.get_presentation_style_display }}</td>
+                        <td>
+                            <strong class="text-success">{{ p.min_price|currency }}</strong>
+                            {% if p.min_price != p.max_price %}
+                                <small class="text-muted d-block">- {{ p.max_price|currency }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if p.total_stock > 5 %}bg-success-subtle text-success{% elif p.total_stock > 0 %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %} px-2 py-1">
+                                {{ p.total_stock }} sản phẩm
+                            </span>
+                        </td>
+                        <td>
+                            <form action="{% url 'dashboard:product_toggle_status' pk=p.pk %}" method="POST" class="d-inline">
+                                {% csrf_token %}
+                                <select name="status" class="form-select form-select-sm" style="width: 120px;" onchange="this.form.submit()">
+                                    <option value="PUBLISHED" {% if p.status == 'PUBLISHED' %}selected{% endif %}>Đang bán</option>
+                                    <option value="DRAFT" {% if p.status == 'DRAFT' %}selected{% endif %}>Bản nháp</option>
+                                    <option value="HIDDEN" {% if p.status == 'HIDDEN' %}selected{% endif %}>Tạm ẩn</option>
+                                    <option value="ARCHIVED" {% if p.status == 'ARCHIVED' %}selected{% endif %}>Lưu trữ</option>
+                                </select>
+                            </form>
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a href="{% url 'catalog:product_detail' slug=p.slug %}" target="_blank" class="btn btn-sm btn-outline-secondary me-1" title="Xem trên web">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'dashboard:product_edit' pk=p.pk %}" class="btn btn-sm btn-flora-outline me-1" title="Chỉnh sửa">
+                                <i class="bi bi-pencil-square"></i> Sửa
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ p.pk }}" title="Xóa mẫu hoa">
+                                <i class="bi bi-trash3"></i> Xóa
+                            </button>
+
+                            <!-- Modal Xác nhận Xóa Mẫu Hoa -->
+                            <div class="modal fade" id="deleteProductModal{{ p.pk }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered text-start">
+                                    <div class="modal-content border-0 shadow">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h6 class="modal-title font-serif fw-bold text-white mb-0">
+                                                <i class="bi bi-exclamation-triangle-fill me-2"></i> Xác nhận xóa mẫu hoa
+                                            </h6>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <p class="mb-2 text-dark">Bạn có chắc chắn muốn xóa vĩnh viễn mẫu hoa sau?</p>
+                                            <div class="p-3 bg-light rounded-3 border mb-3">
+                                                <div class="fw-bold text-dark fs-6">{{ p.name }}</div>
+                                                <div class="text-muted fs-7">Mã SKU: <strong>{{ p.sku }}</strong> | Danh mục: {{ p.primary_category.name }}</div>
+                                                <div class="text-muted fs-7">Số biến thể: {{ p.variants.count() }} | Tồn kho: {{ p.total_stock }} sản phẩm</div>
+                                            </div>
+                                            <div class="alert alert-warning fs-7 mb-0">
+                                                <i class="bi bi-info-circle me-1"></i> <strong>Lưu ý:</strong> Nếu mẫu hoa đang có đơn hàng xử lý hoặc giao hoa, hệ thống sẽ ngăn chặn việc xóa để đảm bảo an toàn đơn hàng.
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                                            <form action="{% url 'dashboard:product_delete' pk=p.pk %}" method="POST" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-danger px-3">
+                                                    <i class="bi bi-trash3 me-1"></i> Xác nhận xóa
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-5">
+                            <i class="bi bi-flower1 fs-1 d-block mb-2"></i>
+                            Không tìm thấy mẫu hoa nào khớp với bộ lọc.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Phân trang -->
+{% if page_obj.has_other_pages %}
+    <nav class="mt-4 d-flex justify-content-center">
+        <ul class="pagination pagination-sm">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?{% query_transform page=page_obj.previous_page_number %}">Trước</a></li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?{% query_transform page=num %}">{{ num }}</a>
+                </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?{% query_transform page=page_obj.next_page_number %}">Sau</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

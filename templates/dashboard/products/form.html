@@ -1,0 +1,293 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="mb-4">
+    <a href="{% url 'dashboard:product_list' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách hoa
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Form thông tin chính sản phẩm -->
+    <div class="col-lg-8">
+        <div class="dash-card p-4">
+            <h5 class="font-serif fw-bold mb-4 pb-2 border-bottom">Thông Tin Mẫu Hoa</h5>
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Tên mẫu hoa *</label>
+                        {{ form.name }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Mã sản phẩm (SKU) *</label>
+                        {{ form.sku }}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Danh mục báo cáo chính *</label>
+                        {{ form.primary_category }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Kiểu dáng trình bày *</label>
+                        {{ form.presentation_style }}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Tông màu chủ đạo *</label>
+                        {{ form.color_tone }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Trạng thái kinh doanh *</label>
+                        {{ form.status }}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Dịp tặng phù hợp</label>
+                        {{ form.occasions }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Loại hoa chính</label>
+                        {{ form.flower_types }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Thành phần hoa & lá phụ *</label>
+                    {{ form.flower_composition }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Mô tả ngắn gọn *</label>
+                    {{ form.short_description }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Mô tả chi tiết & ý nghĩa hoa *</label>
+                    {{ form.description }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Hướng dẫn chăm sóc hoa</label>
+                    {{ form.care_instructions }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Ghi chú hoa theo mùa</label>
+                    {{ form.seasonal_policy_notes }}
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Ảnh đại diện chính *</label>
+                        {{ form.main_image }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Tải thêm ảnh phụ (Nhiều ảnh)</label>
+                        <input type="file" name="extra_images" multiple class="form-control">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="form-check form-check-inline">
+                        {{ form.is_featured }}
+                        <label class="form-check-label fw-semibold ms-1" for="{{ form.is_featured.id_for_label }}">Đưa vào Bộ sưu tập nổi bật</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        {{ form.is_bestseller_manual }}
+                        <label class="form-check-label fw-semibold ms-1" for="{{ form.is_bestseller_manual.id_for_label }}">Ghim vào Bán chạy thủ công</label>
+                    </div>
+                </div>
+
+                {% if not product %}
+                    <!-- Khi thêm mới: nhập giá và tồn kho cho biến thể đầu tiên -->
+                    <div class="p-3 bg-light rounded-3 mb-4 border">
+                        <h6 class="fw-bold mb-2">Giá & Tồn Kho Biến Thể Mặc Định (Size M)</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fs-7">Giá bán niêm yết (VNĐ):</label>
+                                <input type="number" name="default_price" class="form-control" value="650000" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fs-7">Số lượng tồn kho ban đầu:</label>
+                                <input type="number" name="default_stock" class="form-control" value="15" required>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="d-flex align-items-center justify-content-between pt-2">
+                    <button type="submit" class="btn btn-flora px-4 py-2">
+                        <i class="bi bi-save me-1"></i> Lưu thông tin mẫu hoa
+                    </button>
+                    {% if product %}
+                        <button type="button" class="btn btn-outline-danger px-3 py-2" data-bs-toggle="modal" data-bs-target="#deleteProductModal">
+                            <i class="bi bi-trash3 me-1"></i> Xóa mẫu hoa này
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+
+            {% if product %}
+                <!-- Modal Xác nhận Xóa Mẫu Hoa -->
+                <div class="modal fade" id="deleteProductModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-danger text-white">
+                                <h6 class="modal-title font-serif fw-bold text-white mb-0">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Xác nhận xóa mẫu hoa
+                                </h6>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-4 text-start">
+                                <p class="mb-2 text-dark">Bạn có chắc chắn muốn xóa vĩnh viễn mẫu hoa sau?</p>
+                                <div class="p-3 bg-light rounded-3 border mb-3">
+                                    <div class="fw-bold text-dark fs-6">{{ product.name }}</div>
+                                    <div class="text-muted fs-7">Mã SKU: <strong>{{ product.sku }}</strong> | Danh mục: {{ product.primary_category.name }}</div>
+                                    <div class="text-muted fs-7">Số biến thể: {{ variants|length }} | Tồn kho: {{ product.total_stock }} sản phẩm</div>
+                                </div>
+                                <div class="alert alert-warning fs-7 mb-0">
+                                    <i class="bi bi-info-circle me-1"></i> <strong>Lưu ý:</strong> Nếu mẫu hoa đang có đơn hàng xử lý hoặc giao hoa, hệ thống sẽ ngăn chặn việc xóa để đảm bảo an toàn đơn hàng.
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                                <form action="{% url 'dashboard:product_delete' pk=product.pk %}" method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger px-3">
+                                        <i class="bi bi-trash3 me-1"></i> Xác nhận xóa vĩnh viễn
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Cột Phải: Biến thể kích thước & Thư viện ảnh nếu đang sửa -->
+    <div class="col-lg-4">
+        {% if product %}
+            <!-- Quản lý biến thể kích thước -->
+            <div class="dash-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="font-serif fw-bold mb-0">Biến Thể Kích Thước ({{ variants|length }})</h6>
+                    <button class="btn btn-sm btn-flora-outline" data-bs-toggle="collapse" data-bs-target="#addVariantCollapse">
+                        + Thêm size
+                    </button>
+                </div>
+
+                <!-- Form Thêm biến thể -->
+                <div class="collapse mb-3" id="addVariantCollapse">
+                    <form action="{% url 'dashboard:product_variant_save' product_id=product.id %}" method="POST" class="p-3 bg-light rounded-3 border">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                            <label class="form-label fs-7 fw-semibold">Tên kích thước:</label>
+                            <input type="text" name="name" class="form-control form-control-sm" placeholder="Ví dụ: Vừa vặn (Size M)" required>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label fs-7">Mã size:</label>
+                                <select name="size_code" class="form-select form-select-sm">
+                                    <option value="S">Size S</option>
+                                    <option value="M" selected>Size M</option>
+                                    <option value="L">Size L</option>
+                                    <option value="CUSTOM">Tùy chỉnh</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fs-7">SKU:</label>
+                                <input type="text" name="sku" class="form-control form-control-sm" placeholder="{{ product.sku }}-M" required>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label fs-7">Giá niêm yết:</label>
+                                <input type="number" name="price" class="form-control form-control-sm" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fs-7">Giá sale (tùy chọn):</label>
+                                <input type="number" name="sale_price" class="form-control form-control-sm">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label fs-7">Tồn kho:</label>
+                                <input type="number" name="stock" class="form-control form-control-sm" value="10" required>
+                            </div>
+                            <div class="col-6 d-flex align-items-center pt-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_default" value="1" id="defVCheck">
+                                    <label class="form-check-label fs-7" for="defVCheck">Mặc định</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-flora w-100">Lưu biến thể</button>
+                    </form>
+                </div>
+
+                <!-- Danh sách biến thể -->
+                <ul class="list-group list-group-flush fs-7">
+                    {% for v in variants %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                            <div>
+                                <strong>{{ v.name }}</strong>
+                                <small class="text-muted d-block">SKU: {{ v.sku }} | Tồn: {{ v.stock }}</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="text-end">
+                                    <span class="fw-bold text-success">{{ v.effective_price|currency }}</span>
+                                    {% if v.is_default %}<span class="badge bg-primary ms-1">Mặc định</span>{% endif %}
+                                </div>
+                                <form action="{% url 'dashboard:product_variant_delete' product_id=product.id variant_id=v.id %}" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa biến thể {{ v.name }}?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger p-1" style="line-height: 1;" title="{% if variants|length <= 1 %}Không thể xóa biến thể duy nhất{% else %}Xóa biến thể này{% endif %}" {% if variants|length <= 1 %}disabled{% endif %}>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Thư viện ảnh phụ -->
+            <div class="dash-card p-4">
+                <h6 class="font-serif fw-bold mb-3">Thư Viện Ảnh Chi Tiết</h6>
+                <div class="row g-2">
+                    {% if product.main_image %}
+                        <div class="col-4">
+                            <img src="{{ product.main_image.url }}" alt="Main" class="img-fluid rounded border border-success p-1 w-100" style="height: 85px; object-fit: cover;">
+                            <small class="badge bg-success w-100 mt-1">Ảnh chính</small>
+                        </div>
+                    {% endif %}
+                    {% for img in images %}
+                        <div class="col-4 position-relative">
+                            <img src="{{ img.image.url }}" alt="Sub" class="img-fluid rounded border p-1 w-100" style="height: 85px; object-fit: cover;">
+                            <form action="{% url 'dashboard:product_image_delete' product_id=product.id image_id=img.id %}" method="POST" class="position-absolute top-0 end-0 m-1" onsubmit="return confirm('Xóa ảnh phụ này?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger py-0 px-1 rounded-circle shadow-sm" style="font-size: 11px; line-height: 1.2;" title="Xóa ảnh này">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

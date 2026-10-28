@@ -1,0 +1,56 @@
+{% load static core_tags %}
+
+<div class="product-card">
+    <!-- Badges -->
+    <div class="product-badges">
+        {% if product.default_variant.is_on_sale %}
+            <span class="badge-flora-sale">-{{ product.default_variant.discount_percent }}%</span>
+        {% endif %}
+        {% if product.is_bestseller_manual or product.total_sold_count > 0 %}
+            <span class="badge-flora-bestseller"><i class="bi bi-fire me-1"></i> Bán chạy</span>
+        {% endif %}
+    </div>
+
+    <!-- Wishlist Button -->
+    <button type="button" class="btn-wishlist-circle btn-wishlist-toggle {% if product.id in wishlist_product_ids %}active{% endif %}" data-product-id="{{ product.id }}" title="Lưu vào yêu thích">
+        <i class="bi {% if product.id in wishlist_product_ids %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+    </button>
+
+    <!-- Thumbnail -->
+    <a href="{% url 'catalog:product_detail' slug=product.slug %}" class="product-thumb-wrapper">
+        {% if product.main_image %}
+            <img src="{{ product.main_image.url }}" alt="{{ product.name }}" loading="lazy">
+        {% else %}
+            <div class="d-flex align-items-center justify-content-center h-100 bg-light text-muted">
+                <i class="bi bi-flower1 fs-1"></i>
+            </div>
+        {% endif %}
+    </a>
+
+    <!-- Info -->
+    <div class="product-info">
+        <div class="product-category-meta">
+            {{ product.primary_category.name }}
+        </div>
+        <a href="{% url 'catalog:product_detail' slug=product.slug %}" class="product-title text-decoration-none">
+            {{ product.name }}
+        </a>
+
+        <!-- Rating & Sales count -->
+        <div class="d-flex align-items-center gap-1 mb-2" style="font-size: 12px;">
+            <span class="text-warning"><i class="bi bi-star-fill"></i> {{ product.average_rating }}</span>
+            <span class="text-muted">({{ product.approved_reviews_count }} đánh giá)</span>
+            {% if product.total_sold_count > 0 %}
+                <span class="text-muted ms-auto">Đã bán {{ product.total_sold_count }}</span>
+            {% endif %}
+        </div>
+
+        <!-- Prices -->
+        <div class="product-price-box">
+            <span class="price-current">{{ product.min_price|currency }}</span>
+            {% if product.default_variant.is_on_sale %}
+                <span class="price-original">{{ product.default_variant.price|currency }}</span>
+            {% endif %}
+        </div>
+    </div>
+</div>

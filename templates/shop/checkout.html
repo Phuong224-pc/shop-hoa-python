@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+{% load static core_tags %}
+
+{% block title %}Thông Tin Đặt Hoa & Giao Nhận - {{ shop_setting.shop_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <h1 class="font-serif fs-2 mb-1">Xác Nhận & Đặt Hoa</h1>
+        <p class="text-muted mb-0">Vui lòng điền thông tin người đặt và người nhận hoa chính xác để Flora Flower phục vụ chu đáo nhất.</p>
+    </div>
+
+    <form action="{% url 'orders:checkout' %}" method="POST" id="checkoutForm">
+        {% csrf_token %}
+        <div class="row g-4">
+            <!-- Cột Trái: Thông Tin Người Đặt, Người Nhận & Lịch Giao -->
+            <div class="col-lg-7">
+                <!-- 1. Thông tin Người Đặt (Sender) -->
+                <div class="card p-4 border-0 shadow-sm rounded-4 bg-white mb-4">
+                    <h5 class="font-serif fw-bold mb-3 text-success">
+                        <i class="bi bi-person-fill me-2"></i> 1. Thông Tin Người Đặt Hoa
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Họ và tên của bạn *</label>
+                            <input type="text" name="sender_name" class="form-control" value="{{ user.first_name|default(user.username) }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số điện thoại liên hệ *</label>
+                            <input type="tel" name="sender_phone" class="form-control" value="{{ user.profile.phone }}" placeholder="0901234567" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Email nhận thông báo đơn hàng *</label>
+                            <input type="email" name="sender_email" class="form-control" value="{{ user.email }}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Hình thức nhận & Thông tin Người Nhận (Recipient) -->
+                <div class="card p-4 border-0 shadow-sm rounded-4 bg-white mb-4">
+                    <h5 class="font-serif fw-bold mb-3 text-success">
+                        <i class="bi bi-geo-alt-fill me-2"></i> 2. Hình Thức & Địa Chỉ Giao Hoa
+                    </h5>
+
+                    <!-- Chọn hình thức nhận -->
+                    <div class="mb-4 d-flex gap-3">
+                        <div class="form-check p-3 border rounded-3 flex-grow-1 bg-light">
+                            <input class="form-check-input ms-0 me-2" type="radio" name="delivery_method" id="methodDelivery" value="DELIVERY" checked onchange="toggleDeliverySection(true)">
+                            <label class="form-check-label fw-bold" for="methodDelivery">
+                                <i class="bi bi-truck me-1"></i> Giao hoa tận nơi
+                            </label>
+                            <small class="text-muted d-block ms-4">Giao tận tay người nhận hoặc địa chỉ chỉ định</small>
+                        </div>
+                        {% if setting.enable_store_pickup %}
+                        <div class="form-check p-3 border rounded-3 flex-grow-1 bg-light">
+                            <input class="form-check-input ms-0 me-2" type="radio" name="delivery_method" id="methodPickup" value="PICKUP" onchange="toggleDeliverySection(false)">
+                            <label class="form-check-label fw-bold" for="methodPickup">
+                                <i class="bi bi-shop me-1"></i> Nhận tại cửa hàng
+                            </label>
+                            <small class="text-muted d-block ms-4">{{ setting.address }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Phần địa chỉ người nhận (ẩn nếu chọn nhận tại shop) -->
+                    <div id="recipientAddressSection">
+                        {% if user_addresses %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Chọn địa chỉ đã lưu:</label>
+                                <select class="form-select mb-2" id="savedAddressSelect" onchange="fillSavedAddress(this)">
+                                    <option value="">-- Điền địa chỉ mới bên dưới --</option>
+                                    {% for addr in user_addresses %}
+                                        <option value="{{ addr.id }}" 
+                                                data-name="{{ addr.full_name }}" 
+                                                data-phone="{{ addr.phone }}" 
+                                                data-street="{{ addr.street_address }}"
+                                                data-ward="{{ addr.ward }}"
+                                                data-district="{{ addr.district }}"
+                                                data-city="{{ addr.city }}"
+                                                {% if addr.is_default %}selected{% endif %}>
+                                            {{ addr.full_name }} - {{ addr.phone }} ({{ addr.street_address }}, {{ addr.district }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        {% endif %}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Họ tên người nhận hoa *</label>
+                                <input type="text" name="recipient_name" id="rec_name" class="form-control" value="{{ default_address.full_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Số điện thoại người nhận *</label>
+                                <input type="tel" name="recipient_phone" id="rec_phone" class="form-control" value="{{ default_address.phone }}" placeholder="0987654321" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Địa chỉ giao hoa chi tiết (Số nhà, tên đường, tòa nhà) *</label>
+                                <input type="text" name="delivery_address" id="rec_street" class="form-control" value="{{ default_address.street_address }}" placeholder="Ví dụ: Căn hộ 12B, Chung cư Horizon, 214 Trần Quang Khải" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Phường / Xã</label>
+                                <input type="text" name="delivery_ward" id="rec_ward" class="form-control" value="{{ default_address.ward }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Quận / Huyện</label>
+                                <input type="text" name="delivery_district" id="rec_district" class="form-control" value="{{ default_address.district }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Tỉnh / Thành phố</label>
+                                <input type="text" name="delivery_city" id="rec_city" class="form-control" value="{{ default_address.city|default('TP. Hồ Chí Minh') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Lịch giao hoa: Ngày & Khung giờ -->
+                <div class="card p-4 border-0 shadow-sm rounded-4 bg-white mb-4">
+                    <h5 class="font-serif fw-bold mb-3 text-success">
+                        <i class="bi bi-clock-history me-2"></i> 3. Thời Gian Giao Nhận Hoa
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Ngày giao hoa *</label>
+                            <input type="date" name="delivery_date" class="form-control" min="{{ min_date_str }}" value="{{ min_date_str }}" required>
+                            <small class="text-muted">Cửa hàng ngừng nhận đơn trong ngày sau {{ setting.same_day_cutoff_hour }}:00.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Khung giờ giao *</label>
+                            <select name="delivery_time_slot" class="form-select" required>
+                                {% for slot_val, slot_name in time_slots %}
+                                    <option value="{{ slot_val }}">{{ slot_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Cần tối thiểu {{ setting.min_prep_hours }} tiếng để chuẩn bị hoa chu đáo.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Lời nhắn thiệp & Phương thức thanh toán -->
+                <div class="card p-4 border-0 shadow-sm rounded-4 bg-white mb-4">
+                    <h5 class="font-serif fw-bold mb-3 text-success">
+                        <i class="bi bi-credit-card-2-front-fill me-2"></i> 4. Phương Thức Thanh Toán & Lời Nhắn
+                    </h5>
+
+                    <!-- Phương thức thanh toán -->
+                    <div class="mb-4">
+                        <label class="fw-semibold mb-2 d-block">Chọn phương thức thanh toán:</label>
+                        {% if setting.enable_vietqr %}
+                        <div class="form-check p-3 border rounded-3 mb-2 bg-light">
+                            <input class="form-check-input ms-0 me-2" type="radio" name="payment_method" id="payBank" value="BANK_TRANSFER" checked>
+                            <label class="form-check-label fw-bold text-dark" for="payBank">
+                                <i class="bi bi-qr-code text-primary me-1"></i> Chuyển khoản quét mã QR (VietQR tự động)
+                            </label>
+                            <small class="text-muted d-block ms-4">Mã QR hiển thị ngay sau khi đặt hàng, chuyển khoản nhanh qua mọi App ngân hàng.</small>
+                        </div>
+                        {% endif %}
+
+                        {% if setting.enable_cod %}
+                        <div class="form-check p-3 border rounded-3 bg-light">
+                            <input class="form-check-input ms-0 me-2" type="radio" name="payment_method" id="payCOD" value="COD" {% if not setting.enable_vietqr %}checked{% endif %}>
+                            <label class="form-check-label fw-bold text-dark" for="payCOD">
+                                <i class="bi bi-cash-stack text-success me-1"></i> Thanh toán tiền mặt khi nhận hoa (COD)
+                            </label>
+                            <small class="text-muted d-block ms-4">Thanh toán trực tiếp cho nhân viên giao hàng khi nhận hoa.</small>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Lời nhắn thiệp & Ẩn danh -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Lời nhắn trên thiệp tặng kèm:</label>
+                        <textarea name="card_message" class="form-control" rows="2" placeholder="Ghi lời chúc ý nghĩa của bạn gửi đến người nhận..."></textarea>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-7">
+                            <input type="text" name="card_sender_name" class="form-control form-control-sm" placeholder="Tên người gửi ghi trên thiệp">
+                        </div>
+                        <div class="col-md-5 d-flex align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_anonymous" value="1" id="anonCheckout">
+                                <label class="form-check-label fs-7" for="anonCheckout">
+                                    Ẩn danh với người nhận
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ghi chú của khách -->
+                    <div>
+                        <label class="form-label fw-semibold">Ghi chú giao hàng cho shipper:</label>
+                        <input type="text" name="customer_notes" class="form-control" placeholder="Ví dụ: Gọi trước khi giao 15 phút, gửi lễ tân tòa nhà...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột Phải: Xem Lại Giỏ & Nút Đặt -->
+            <div class="col-lg-5">
+                <div class="card p-4 border-0 shadow-sm rounded-4 bg-white sticky-top" style="top: 100px;">
+                    <h5 class="font-serif fw-bold mb-3">Đơn Hoa Của Bạn</h5>
+
+                    <div class="overflow-y-auto mb-3" style="max-height: 280px;">
+                        {% for item in cart.items %}
+                            <div class="d-flex align-items-center gap-3 py-2 border-bottom">
+                                <img src="{{ item.variant.product.main_image.url }}" alt="{{ item.variant.product.name }}" class="rounded object-fit-cover" style="width: 50px; height: 50px;">
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold fs-7 text-truncate" style="max-width: 200px;">{{ item.variant.product.name }}</div>
+                                    <small class="text-muted">{{ item.quantity }}x {{ item.variant.name }}</small>
+                                </div>
+                                <div class="fw-bold text-success fs-7">
+                                    {{ item.line_total|currency }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Chi tiết tính tiền -->
+                    <div class="d-flex justify-content-between py-2 border-bottom fs-7">
+                        <span class="text-muted">Tiền hoa:</span>
+                        <span>{{ cart.flowers_subtotal|currency }}</span>
+                    </div>
+
+                    {% if cart.accessories_subtotal > 0 %}
+                    <div class="d-flex justify-content-between py-2 border-bottom fs-7">
+                        <span class="text-muted">Phụ kiện:</span>
+                        <span>{{ cart.accessories_subtotal|currency }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if cart.discount_amount > 0 %}
+                    <div class="d-flex justify-content-between py-2 border-bottom fs-7 text-danger">
+                        <span>Giảm giá ({{ cart.coupon.code }}):</span>
+                        <span>-{{ cart.discount_amount|currency }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between py-2 border-bottom fs-7">
+                        <span class="text-muted">Phí giao hàng:</span>
+                        <span id="shippingFeeText">
+                            {% if cart.subtotal_before_discount >= setting.free_shipping_threshold %}
+                                <strong class="text-success">Miễn phí</strong>
+                            {% else %}
+                                {{ setting.shipping_fee_default|currency }}
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="d-flex justify-content-between pt-3 mb-4">
+                        <span class="fs-5 fw-bold">Tổng thanh toán:</span>
+                        <span class="fs-4 fw-bold text-success">
+                            {{ cart.estimated_total|currency }}
+                        </span>
+                    </div>
+
+                    <button type="submit" class="btn btn-flora btn-lg w-100 py-3 shadow">
+                        <i class="bi bi-bag-check-fill me-2"></i> Xác Nhận Đặt Hoa Ngay
+                    </button>
+                    <small class="text-muted text-center d-block mt-2 fs-7">
+                        Bằng việc bấm đặt hàng, quý khách đồng ý với các chính sách của Flora Flower.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function toggleDeliverySection(isDelivery) {
+    const sec = document.getElementById('recipientAddressSection');
+    const recName = document.getElementById('rec_name');
+    const recPhone = document.getElementById('rec_phone');
+    const recStreet = document.getElementById('rec_street');
+    const shippingText = document.getElementById('shippingFeeText');
+
+    if (isDelivery) {
+        sec.style.display = 'block';
+        recName.required = true;
+        recPhone.required = true;
+        recStreet.required = true;
+    } else {
+        sec.style.display = 'none';
+        recName.required = false;
+        recPhone.required = false;
+        recStreet.required = false;
+        if (shippingText) shippingText.innerHTML = '<strong class="text-success">Miễn phí (Nhận tại shop)</strong>';
+    }
+}
+
+function fillSavedAddress(selectEl) {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    if (!opt.value) return;
+    document.getElementById('rec_name').value = opt.getAttribute('data-name') || '';
+    document.getElementById('rec_phone').value = opt.getAttribute('data-phone') || '';
+    document.getElementById('rec_street').value = opt.getAttribute('data-street') || '';
+    document.getElementById('rec_ward').value = opt.getAttribute('data-ward') || '';
+    document.getElementById('rec_district').value = opt.getAttribute('data-district') || '';
+    document.getElementById('rec_city').value = opt.getAttribute('data-city') || 'TP. Hồ Chí Minh';
+}
+</script>
+{% endblock %}

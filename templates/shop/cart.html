@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static core_tags %}
+
+{% block title %}Giỏ Hàng Hoa Tươi - {{ shop_setting.shop_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex align-items-center mb-4">
+        <h1 class="font-serif fs-2 mb-0">Giỏ Hàng Của Bạn</h1>
+        <span class="badge bg-light text-dark border ms-3 fs-7">{{ cart.total_items_count }} món hoa</span>
+    </div>
+
+    {% if cart.items.first() %}
+        <!-- Free Shipping Progress Bar -->
+        <div class="card p-3 mb-4 border-0 shadow-sm rounded-4 bg-white">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fs-7 fw-semibold">
+                    {% if amount_needed_for_free_shipping > 0 %}
+                        Mua thêm <strong>{{ amount_needed_for_free_shipping|currency }}</strong> để được <strong class="text-success">MIỄN PHÍ GIAO HÀNG</strong>!
+                    {% else %}
+                        <span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> Chúc mừng bạn! Đơn hàng đủ điều kiện MIỄN PHÍ VẬN CHUYỂN</span>
+                    {% endif %}
+                </span>
+                <span class="fs-7 text-muted">{{ free_shipping_progress }}%</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-success" style="width: {{ free_shipping_progress }}%;"></div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Cột Trái: Danh Sách Món Trong Giỏ -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+                    {% for item in cart.items %}
+                        <div class="row align-items-center py-3 {% if not loop.last %}border-bottom{% endif %}">
+                            <!-- Ảnh -->
+                            <div class="col-3 col-md-2">
+                                <a href="{% url 'catalog:product_detail' slug=item.variant.product.slug %}">
+                                    {% if item.variant.product.main_image %}
+                                        <img src="{{ item.variant.product.main_image.url }}" alt="{{ item.variant.product.name }}" class="img-fluid rounded-3 object-fit-cover" style="height: 80px; width: 100%;">
+                                    {% else %}
+                                        <div class="bg-light rounded text-center p-3"><i class="bi bi-flower1"></i></div>
+                                    {% endif %}
+                                </a>
+                            </div>
+
+                            <!-- Thông tin hoa & thiệp -->
+                            <div class="col-9 col-md-5">
+                                <h6 class="mb-1 fw-bold">
+                                    <a href="{% url 'catalog:product_detail' slug=item.variant.product.slug %}" class="text-dark text-decoration-none">
+                                        {{ item.variant.product.name }}
+                                    </a>
+                                </h6>
+                                <div class="badge bg-light text-muted border mb-2">{{ item.variant.name }}</div>
+
+                                <!-- Phụ kiện đi kèm -->
+                                {% if item.accessories.first() %}
+                                    <div class="fs-7 text-muted mb-1">
+                                        <i class="bi bi-plus-circle text-success me-1"></i> Phụ kiện:
+                                        {% for acc in item.accessories %}
+                                            <span class="badge bg-light text-dark border">{{ acc.quantity }}x {{ acc.accessory.name }} (+{{ acc.total_price|currency }})</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+
+                                <!-- Thiệp chúc mừng -->
+                                {% if item.card_message %}
+                                    <div class="p-2 bg-light rounded fs-7 text-muted mb-1">
+                                        <i class="bi bi-envelope-heart text-danger me-1"></i> Thiệp: "{{ item.card_message|truncatechars(45) }}"
+                                        {% if item.is_anonymous %}
+                                            <span class="badge bg-secondary ms-1">Ẩn danh</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                                <div class="fs-7 text-success fw-bold d-md-none">
+                                    {{ item.line_total|currency }}
+                                </div>
+                            </div>
+
+                            <!-- Bộ tăng giảm số lượng -->
+                            <div class="col-6 col-md-3 mt-2 mt-md-0">
+                                <form action="{% url 'cart:update_cart_item' item_id=item.id %}" method="POST" class="d-flex align-items-center">
+                                    {% csrf_token %}
+                                    <div class="input-group input-group-sm" style="width: 110px;">
+                                        <button class="btn btn-outline-secondary" type="submit" name="quantity" value="{{ item.quantity|add('-1') }}">-</button>
+                                        <input type="text" class="form-control text-center bg-white" value="{{ item.quantity }}" readonly>
+                                        {% if item.quantity >= item.variant.stock %}
+                                            <button class="btn btn-outline-secondary" type="button" disabled>+</button>
+                                        {% else %}
+                                            <button class="btn btn-outline-secondary" type="submit" name="quantity" value="{{ item.quantity|add('1') }}">+</button>
+                                        {% endif %}
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Thành tiền & Xóa -->
+                            <div class="col-6 col-md-2 mt-2 mt-md-0 text-end">
+                                <div class="fw-bold text-success fs-6 mb-1 d-none d-md-block">
+                                    {{ item.line_total|currency }}
+                                </div>
+                                <form action="{% url 'cart:remove_cart_item' item_id=item.id %}" method="POST">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-link text-danger p-0 fs-7" onclick="return confirm('Bạn có chắc muốn xóa món hoa này?');">
+                                        <i class="bi bi-trash3"></i> Xóa
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <a href="{% url 'catalog:product_list' %}" class="btn btn-flora-outline btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Tiếp tục chọn thêm hoa
+                </a>
+            </div>
+
+            <!-- Cột Phải: Tổng Hóa Đơn & Mã Ưu Đãi -->
+            <div class="col-lg-4">
+                <!-- Mã giảm giá -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                    <h6 class="font-serif fw-bold mb-3"><i class="bi bi-tag-fill text-warning me-2"></i> Mã Giảm Giá</h6>
+                    {% if cart.coupon %}
+                        <div class="alert alert-success d-flex justify-content-between align-items-center p-2 mb-0">
+                            <div>
+                                <strong>{{ cart.coupon.code }}</strong>
+                                <small class="d-block text-muted">{{ cart.coupon.title }}</small>
+                            </div>
+                            <form action="{% url 'cart:remove_coupon' %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger border-0">Gỡ</button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <form action="{% url 'cart:apply_coupon' %}" method="POST">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <input type="text" name="coupon_code" class="form-control" placeholder="Nhập mã ưu đãi..." required>
+                                <button class="btn btn-flora" type="submit">Áp dụng</button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+
+                <!-- Tóm tắt chi phí -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                    <h5 class="font-serif fw-bold mb-3">Tóm Tắt Đơn Hàng</h5>
+                    
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted">Tiền hoa:</span>
+                        <span class="fw-semibold">{{ cart.flowers_subtotal|currency }}</span>
+                    </div>
+
+                    {% if cart.accessories_subtotal > 0 %}
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted">Phụ kiện kèm theo:</span>
+                        <span class="fw-semibold">{{ cart.accessories_subtotal|currency }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if cart.discount_amount > 0 %}
+                    <div class="d-flex justify-content-between py-2 border-bottom text-danger">
+                        <span>Giảm giá ưu đãi:</span>
+                        <span class="fw-semibold">-{{ cart.discount_amount|currency }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted">Phí giao hàng:</span>
+                        <span class="text-muted fs-7">Tính tại bước tiếp theo</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between pt-3 mb-4">
+                        <span class="fs-5 fw-bold">Tổng tạm tính:</span>
+                        <span class="fs-4 fw-bold text-success">{{ cart.estimated_total|currency }}</span>
+                    </div>
+
+                    <!-- Nút Đặt Hàng -->
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'orders:checkout' %}" class="btn btn-flora btn-lg w-100 py-3">
+                            Tiến hành đặt hoa <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}?next={% url 'orders:checkout' %}" class="btn btn-flora btn-lg w-100 py-3">
+                            Đăng nhập để đặt hoa <i class="bi bi-box-arrow-in-right ms-2"></i>
+                        </a>
+                        <small class="text-muted text-center d-block mt-2">
+                            Bạn cần đăng nhập tài khoản trước khi hoàn tất đặt hàng.
+                        </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+        <!-- Empty Cart -->
+        <div class="empty-state-box my-5">
+            <div class="empty-state-icon"><i class="bi bi-bag-x"></i></div>
+            <h4 class="font-serif mb-2">Giỏ hàng của bạn đang trống</h4>
+            <p class="text-muted mb-4">Chưa có mẫu hoa tươi nào trong giỏ hàng. Hãy khám phá những thiết kế hoa tuyệt đẹp của Flora Flower ngay!</p>
+            <a href="{% url 'catalog:product_list' %}" class="btn btn-flora btn-lg">Khám phá các mẫu hoa</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

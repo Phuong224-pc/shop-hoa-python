@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load static core_tags %}
+
+{% block title %}Sổ Địa Chỉ Giao Hàng - {{ shop_setting.shop_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row g-4">
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <div class="card p-3 border-0 shadow-sm rounded-4 bg-white mb-4">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action rounded-3 mb-1">
+                        <i class="bi bi-person me-2"></i> Thông tin cá nhân
+                    </a>
+                    <a href="{% url 'accounts:orders' %}" class="list-group-item list-group-item-action rounded-3 mb-1">
+                        <i class="bi bi-receipt me-2"></i> Đơn hàng của tôi
+                    </a>
+                    <a href="{% url 'accounts:addresses' %}" class="list-group-item list-group-item-action active rounded-3 mb-1">
+                        <i class="bi bi-geo-alt me-2"></i> Sổ địa chỉ nhận
+                    </a>
+                    <a href="{% url 'accounts:wishlist' %}" class="list-group-item list-group-item-action rounded-3 mb-1">
+                        <i class="bi bi-heart me-2"></i> Mẫu hoa yêu thích
+                    </a>
+                    <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action rounded-3 mb-1">
+                        <i class="bi bi-key me-2"></i> Đổi mật khẩu
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột Phải: Danh Sách & Thêm Mới -->
+        <div class="col-lg-9">
+            <div class="card p-4 p-md-5 border-0 shadow-sm rounded-4 bg-white mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                    <h4 class="font-serif fw-bold mb-0">Sổ Địa Chỉ Giao Nhận Hoa</h4>
+                    <button class="btn btn-flora btn-sm" data-bs-toggle="collapse" data-bs-target="#addAddressCollapse">
+                        <i class="bi bi-plus-lg me-1"></i> Thêm địa chỉ mới
+                    </button>
+                </div>
+
+                <!-- Form Thêm Mới (Collapse) -->
+                <div class="collapse mb-4" id="addAddressCollapse">
+                    <div class="card p-4 border bg-light rounded-4">
+                        <h6 class="fw-bold mb-3">Thêm Địa Chỉ Mới</h6>
+                        <form action="{% url 'accounts:address_add' %}" method="POST">
+                            {% csrf_token %}
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Họ tên người nhận *</label>
+                                    <input type="text" name="full_name" class="form-control" placeholder="Nguyễn Văn A" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Số điện thoại *</label>
+                                    <input type="tel" name="phone" class="form-control" placeholder="0901234567" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Địa chỉ chi tiết (Số nhà, tên đường) *</label>
+                                    <input type="text" name="street_address" class="form-control" placeholder="Ví dụ: 128 Nguyễn Du" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Phường / Xã</label>
+                                    <input type="text" name="ward" class="form-control" placeholder="Phường Bến Nghé">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Quận / Huyện</label>
+                                    <input type="text" name="district" class="form-control" placeholder="Quận 1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Tỉnh / Thành phố</label>
+                                    <input type="text" name="city" class="form-control" value="TP. Hồ Chí Minh">
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="is_default" value="1" id="defCheck">
+                                        <label class="form-check-label fs-7" for="defCheck">Đặt làm địa chỉ mặc định</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-flora btn-sm">Lưu địa chỉ</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#addAddressCollapse">Hủy</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Danh sách địa chỉ đã lưu -->
+                {% if addresses %}
+                    <div class="row g-3">
+                        {% for addr in addresses %}
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 h-100 position-relative {% if addr.is_default %}border-success bg-light{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <strong class="text-dark">{{ addr.full_name }}</strong>
+                                        {% if addr.is_default %}
+                                            <span class="badge bg-success">Mặc định</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-muted fs-7 mb-1"><i class="bi bi-telephone me-1"></i> {{ addr.phone }}</div>
+                                    <div class="text-muted fs-7 mb-3"><i class="bi bi-geo-alt me-1"></i> {{ addr.street_address }}, {{ addr.ward }}, {{ addr.district }}, {{ addr.city }}</div>
+                                    <div class="d-flex gap-2 border-top pt-2">
+                                        {% if not addr.is_default %}
+                                            <a href="{% url 'accounts:address_set_default' pk=addr.pk %}" class="btn btn-sm btn-link p-0 text-decoration-none fs-7">
+                                                Đặt mặc định
+                                            </a>
+                                            <span class="text-muted">|</span>
+                                        {% endif %}
+                                        <form action="{% url 'accounts:address_delete' pk=addr.pk %}" method="POST" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-link p-0 text-danger text-decoration-none fs-7" onclick="return confirm('Xác nhận xóa địa chỉ này?');">
+                                                Xóa
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">Bạn chưa có địa chỉ nhận hoa nào được lưu.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

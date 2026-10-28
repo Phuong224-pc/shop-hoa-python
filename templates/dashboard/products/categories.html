@@ -1,0 +1,376 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Quản Lý Danh Mục & Chủ Đề{% endblock %}
+{% block page_title %}Danh Mục Hoa, Dịp Tặng & Loài Hoa{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-serif fw-bold mb-1">Danh Mục & Phân Loại Hoa</h4>
+        <small class="text-muted">Quản lý các danh mục kiểu dáng, dịp tặng và loài hoa chủ đạo</small>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-flora" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+            <i class="bi bi-plus-lg me-1"></i> Thêm Danh Mục Mới
+        </button>
+    </div>
+</div>
+
+<!-- Tabs chuyển đổi giữa Danh mục, Dịp tặng, Loài hoa -->
+<ul class="nav nav-pills mb-4 gap-2" id="catalogTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active px-4 rounded-pill" id="cat-tab" data-bs-toggle="tab" data-bs-target="#categories-tab" type="button" role="tab">
+            <i class="bi bi-grid-fill me-2"></i>Danh Mục Kiểu Dáng ({{ categories|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link px-4 rounded-pill" id="occ-tab" data-bs-toggle="tab" data-bs-target="#occasions-tab" type="button" role="tab">
+            <i class="bi bi-gift-fill me-2"></i>Chủ Đề & Dịp Tặng ({{ occasions|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link px-4 rounded-pill" id="flower-tab" data-bs-toggle="tab" data-bs-target="#flowers-tab" type="button" role="tab">
+            <i class="bi bi-flower1 me-2"></i>Loài Hoa Chính ({{ flower_types|length }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="catalogTabsContent">
+    <!-- 1. DANH MỤC KIỂU DÁNG -->
+    <div class="tab-pane fade show active" id="categories-tab" role="tabpanel">
+        <div class="dash-card">
+            <div class="table-responsive">
+                <table class="table dash-table mb-0 fs-7">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Hình ảnh</th>
+                            <th>Tên danh mục</th>
+                            <th>Đường dẫn (Slug)</th>
+                            <th>Số mẫu hoa</th>
+                            <th>Thứ tự</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat in categories %}
+                        <tr>
+                            <td>
+                                {% if cat.image %}
+                                <img src="{{ cat.image.url }}" class="rounded-3" style="width: 48px; height: 48px; object-fit: cover;" alt="{{ cat.name }}">
+                                {% else %}
+                                <div class="bg-light text-muted d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-image fs-5"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong class="text-dark">{{ cat.name }}</strong>
+                                {% if cat.description %}
+                                <div class="text-muted small text-truncate" style="max-width: 250px;">{{ cat.description }}</div>
+                                {% endif %}
+                            </td>
+                            <td><code>{{ cat.slug }}</code></td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ cat.products_count|default(0) }} sản phẩm</span>
+                            </td>
+                            <td>{{ cat.display_order }}</td>
+                            <td>
+                                {% if cat.is_active %}
+                                <span class="badge bg-success-subtle text-success">Đang hiển thị</span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-muted">Đang ẩn</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                        data-bs-toggle="modal" data-bs-target="#editCatModal{{ cat.id }}">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Edit Cat -->
+                        <div class="modal fade" id="editCatModal{{ cat.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content rounded-4 border-0">
+                                    <form action="{% url 'dashboard:category_save' %}" method="POST" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="model_type" value="category">
+                                        <input type="hidden" name="object_id" value="{{ cat.id }}">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title font-serif fw-bold">Sửa Danh Mục: {{ cat.name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Tên danh mục *</label>
+                                                <input type="text" name="name" class="form-control" value="{{ cat.name }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Mô tả ngắn</label>
+                                                <textarea name="description" class="form-control" rows="2">{{ cat.description }}</textarea>
+                                            </div>
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-6">
+                                                    <label class="form-label fw-semibold">Thứ tự hiển thị</label>
+                                                    <input type="number" name="display_order" class="form-control" value="{{ cat.display_order }}">
+                                                </div>
+                                                <div class="col-6 d-flex align-items-center pt-4">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" name="is_active" value="1" class="form-check-input" id="act{{ cat.id }}" {% if cat.is_active %}checked{% endif %}>
+                                                        <label class="form-check-label fw-semibold" for="act{{ cat.id }}">Hiển thị trên web</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Ảnh đại diện mới (nếu muốn đổi)</label>
+                                                <input type="file" name="image" class="form-control" accept="image/*">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0 pt-0">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                            <button type="submit" class="btn btn-flora">Lưu thay đổi</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <tr><td colspan="7" class="text-center py-4 text-muted">Chưa có danh mục nào.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. CHỦ ĐỀ & DỊP TẶNG -->
+    <div class="tab-pane fade" id="occasions-tab" role="tabpanel">
+        <div class="dash-card">
+            <div class="table-responsive">
+                <table class="table dash-table mb-0 fs-7">
+                    <thead>
+                        <tr>
+                            <th>Tên dịp lễ / Chủ đề</th>
+                            <th>Đường dẫn (Slug)</th>
+                            <th>Mô tả ý nghĩa</th>
+                            <th>Số mẫu hoa</th>
+                            <th>Thứ tự</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for occ in occasions %}
+                        <tr>
+                            <td>
+                                <strong class="text-dark"><i class="bi bi-tag-fill text-flora-primary me-2"></i>{{ occ.name }}</strong>
+                            </td>
+                            <td><code>{{ occ.slug }}</code></td>
+                            <td><span class="text-muted small">{{ occ.description|default("—") }}</span></td>
+                            <td><span class="badge bg-light text-dark border">{{ occ.products_count|default(0) }} sản phẩm</span></td>
+                            <td>{{ occ.display_order }}</td>
+                            <td>
+                                {% if occ.is_active %}
+                                <span class="badge bg-success-subtle text-success">Đang hiển thị</span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-muted">Đang ẩn</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                        data-bs-toggle="modal" data-bs-target="#editOccModal{{ occ.id }}">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Edit Occasion -->
+                        <div class="modal fade" id="editOccModal{{ occ.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content rounded-4 border-0">
+                                    <form action="{% url 'dashboard:category_save' %}" method="POST">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="model_type" value="occasion">
+                                        <input type="hidden" name="object_id" value="{{ occ.id }}">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title font-serif fw-bold">Sửa Dịp Tặng: {{ occ.name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Tên dịp tặng *</label>
+                                                <input type="text" name="name" class="form-control" value="{{ occ.name }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Mô tả ý nghĩa</label>
+                                                <textarea name="description" class="form-control" rows="2">{{ occ.description }}</textarea>
+                                            </div>
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-6">
+                                                    <label class="form-label fw-semibold">Thứ tự hiển thị</label>
+                                                    <input type="number" name="display_order" class="form-control" value="{{ occ.display_order }}">
+                                                </div>
+                                                <div class="col-6 d-flex align-items-center pt-4">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" name="is_active" value="1" class="form-check-input" id="actOcc{{ occ.id }}" {% if occ.is_active %}checked{% endif %}>
+                                                        <label class="form-check-label fw-semibold" for="actOcc{{ occ.id }}">Hiển thị trên web</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0 pt-0">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                            <button type="submit" class="btn btn-flora">Lưu thay đổi</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <tr><td colspan="7" class="text-center py-4 text-muted">Chưa có dịp tặng nào.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. LOÀI HOA CHÍNH -->
+    <div class="tab-pane fade" id="flowers-tab" role="tabpanel">
+        <div class="dash-card">
+            <div class="table-responsive">
+                <table class="table dash-table mb-0 fs-7">
+                    <thead>
+                        <tr>
+                            <th>Loài hoa</th>
+                            <th>Đường dẫn (Slug)</th>
+                            <th>Mô tả & Ý nghĩa</th>
+                            <th>Số mẫu hoa</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ft in flower_types %}
+                        <tr>
+                            <td>
+                                <strong class="text-dark"><i class="bi bi-flower2 text-danger me-2"></i>{{ ft.name }}</strong>
+                            </td>
+                            <td><code>{{ ft.slug }}</code></td>
+                            <td><span class="text-muted small">{{ ft.description|default("—") }}</span></td>
+                            <td><span class="badge bg-light text-dark border">{{ ft.products_count|default(0) }} sản phẩm</span></td>
+                            <td>
+                                {% if ft.is_active %}
+                                <span class="badge bg-success-subtle text-success">Đang hiển thị</span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-muted">Đang ẩn</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                        data-bs-toggle="modal" data-bs-target="#editFtModal{{ ft.id }}">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Edit FlowerType -->
+                        <div class="modal fade" id="editFtModal{{ ft.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content rounded-4 border-0">
+                                    <form action="{% url 'dashboard:category_save' %}" method="POST">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="model_type" value="flower_type">
+                                        <input type="hidden" name="object_id" value="{{ ft.id }}">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title font-serif fw-bold">Sửa Loài Hoa: {{ ft.name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Tên loài hoa *</label>
+                                                <input type="text" name="name" class="form-control" value="{{ ft.name }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Mô tả ý nghĩa</label>
+                                                <textarea name="description" class="form-control" rows="2">{{ ft.description }}</textarea>
+                                            </div>
+                                            <div class="form-check mb-3">
+                                                <input type="checkbox" name="is_active" value="1" class="form-check-input" id="actFt{{ ft.id }}" {% if ft.is_active %}checked{% endif %}>
+                                                <label class="form-check-label fw-semibold" for="actFt{{ ft.id }}">Hiển thị trên bộ lọc website</label>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0 pt-0">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                            <button type="submit" class="btn btn-flora">Lưu thay đổi</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center py-4 text-muted">Chưa có loài hoa nào.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm Mới Tổng Quát -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-4 border-0">
+            <form action="{% url 'dashboard:category_save' %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-serif fw-bold">Thêm Mới Phân Loại Hoa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Loại thực thể *</label>
+                        <select name="model_type" class="form-select">
+                            <option value="category">Danh Mục Kiểu Dáng (Bó hoa, Giỏ hoa, Hộp hoa...)</option>
+                            <option value="occasion">Chủ Đề & Dịp Tặng (Sinh nhật, Khai trương, Cưới...)</option>
+                            <option value="flower_type">Loài Hoa Chính (Hồng, Cúc, Hướng dương...)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tên phân loại *</label>
+                        <input type="text" name="name" class="form-control" placeholder="Ví dụ: Hoa Chúc Mừng Sinh Nhật" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mô tả tóm tắt</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Ý nghĩa hoặc giới thiệu"></textarea>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Thứ tự hiển thị</label>
+                            <input type="number" name="display_order" class="form-control" value="0">
+                        </div>
+                        <div class="col-6 d-flex align-items-center pt-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_active" value="1" class="form-check-input" id="newAct" checked>
+                                <label class="form-check-label fw-semibold" for="newAct">Hiển thị ngay</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ảnh đại diện (tùy chọn)</label>
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-flora">Lưu mới</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

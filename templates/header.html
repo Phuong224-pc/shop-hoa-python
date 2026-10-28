@@ -1,0 +1,252 @@
+{% load static core_tags %}
+
+<!-- Top Announcement Bar -->
+<div class="top-announcement-bar">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div class="d-none d-md-flex align-items-center gap-3">
+            <span><i class="bi bi-telephone-fill me-1"></i> Hotline: <strong>{{ shop_setting.hotline }}</strong></span>
+            <span><i class="bi bi-clock-fill me-1"></i> {{ shop_setting.opening_hours }}</span>
+        </div>
+        <div class="text-center text-md-start flex-grow-1 flex-md-grow-0">
+            <span class="badge bg-white text-dark me-1">Ưu đãi</span>
+            <span>Miễn phí giao hàng cho đơn hoa từ <strong>{{ shop_setting.free_shipping_threshold|currency }}</strong></span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <a href="{% url 'orders:tracking' %}" class="text-decoration-none">
+                <i class="bi bi-geo-alt-fill me-1"></i> Tra cứu đơn hàng
+            </a>
+            {% if user.is_authenticated and user.profile.is_staff_or_admin %}
+                <a href="{% url 'dashboard:overview' %}" class="badge bg-warning text-dark text-decoration-none px-2 py-1">
+                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Main Navbar -->
+<header class="sticky-top main-navbar">
+    <div class="container py-2">
+        <div class="d-flex align-items-center justify-content-between">
+            <!-- Mobile Menu Toggle Button -->
+            <button class="btn d-lg-none p-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
+                <i class="bi bi-list fs-2 text-dark"></i>
+            </button>
+
+            <!-- Brand Logo -->
+            <a class="navbar-brand text-center text-lg-start" href="{% url 'catalog:home' %}">
+                <span class="brand-logo-text">{{ shop_setting.shop_name }}</span>
+                <span class="brand-subtext">Boutique Flower Shop</span>
+            </a>
+
+            <!-- Desktop Nav Menu -->
+            <nav class="d-none d-lg-flex align-items-center gap-1">
+                <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'catalog:home' %}">
+                    Trang chủ
+                </a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'product_list' and not request.GET.category and not request.GET.occasion %}active{% endif %}" href="{% url 'catalog:product_list' %}">
+                    Tất cả sản phẩm
+                </a>
+
+                <!-- Dropdown Mẫu hoa theo kiểu dáng -->
+                <div class="dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Mẫu hoa
+                    </a>
+                    <ul class="dropdown-menu shadow-sm border-0 p-2" style="min-width: 220px; border-radius: 12px;">
+                        {% for cat in nav_categories %}
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{% url 'catalog:category_detail' slug=cat.slug %}">
+                                    <i class="bi {{ cat.icon|default('bi-flower1') }} text-success"></i>
+                                    <span>{{ cat.name }}</span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Dropdown Dịp tặng hoa -->
+                <div class="dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Dịp tặng
+                    </a>
+                    <ul class="dropdown-menu shadow-sm border-0 p-2" style="min-width: 230px; border-radius: 12px;">
+                        {% for occ in nav_occasions %}
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{% url 'catalog:occasion_detail' slug=occ.slug %}">
+                                    <i class="bi {{ occ.icon|default('bi-heart') }} text-danger"></i>
+                                    <span>{{ occ.name }}</span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <a class="nav-link" href="{% url 'content:about' %}">Giới thiệu</a>
+                <a class="nav-link" href="{% url 'content:contact' %}">Liên hệ</a>
+
+                <!-- Thanh tìm kiếm nhỏ gọn đặt cạnh Liên hệ trên cùng thanh điều hướng -->
+                <form action="{% url 'catalog:product_list' %}" method="GET" class="nav-search-form ms-2 d-none d-lg-block">
+                    <div class="nav-search-wrapper">
+                        <input type="text" name="q" class="nav-search-input" placeholder="Tìm hoa tươi..." value="{{ request.GET.q|default('') }}" autocomplete="off" aria-label="Tìm kiếm">
+                        <button type="submit" class="nav-search-btn" title="Tìm kiếm">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </nav>
+
+            <!-- Actions: Search (Mobile only), Wishlist, Cart, Account -->
+            <div class="d-flex align-items-center gap-3">
+                <!-- Search Button (Modal trigger chỉ hiện trên Mobile) -->
+                <button type="button" class="btn btn-link text-dark p-0 border-0 d-lg-none" data-bs-toggle="modal" data-bs-target="#searchModal" title="Tìm kiếm hoa tươi">
+                    <i class="bi bi-search fs-5"></i>
+                </button>
+
+                <!-- Wishlist -->
+                <a href="{% url 'accounts:wishlist' %}" class="text-dark nav-badge-icon" title="Hoa yêu thích">
+                    <i class="bi bi-heart fs-5"></i>
+                </a>
+
+                <!-- Cart -->
+                <a href="{% url 'cart:cart_detail' %}" class="text-dark nav-badge-icon position-relative" title="Giỏ hàng">
+                    <i class="bi bi-bag fs-5"></i>
+                    {% if cart_item_count > 0 %}
+                        <span class="badge-count">{{ cart_item_count }}</span>
+                    {% endif %}
+                </a>
+
+                <!-- User Account Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-link text-dark p-0 border-0 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle fs-4"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 p-2" style="min-width: 220px; border-radius: 12px;">
+                        {% if user.is_authenticated %}
+                            <li class="px-3 py-2 border-bottom mb-1">
+                                <div class="fw-bold text-truncate">{{ user.first_name|default(user.username) }}</div>
+                                <small class="text-muted">{{ user.email }}</small>
+                            </li>
+                            {% if user.profile.is_staff_or_admin %}
+                                <li>
+                                    <a class="dropdown-item py-2 text-primary fw-semibold" href="{% url 'dashboard:overview' %}">
+                                        <i class="bi bi-speedometer2 me-2"></i> Bảng điều khiển Admin
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                            {% endif %}
+                            <li>
+                                <a class="dropdown-item py-2" href="{% url 'accounts:profile' %}">
+                                    <i class="bi bi-person me-2"></i> Hồ sơ tài khoản
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2" href="{% url 'accounts:orders' %}">
+                                    <i class="bi bi-receipt me-2"></i> Lịch sử đơn hàng
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2" href="{% url 'accounts:addresses' %}">
+                                    <i class="bi bi-geo-alt me-2"></i> Sổ địa chỉ nhận
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item py-2 text-danger" href="{% url 'accounts:logout' %}">
+                                    <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất
+                                </a>
+                            </li>
+                        {% else %}
+                            <li>
+                                <a class="dropdown-item py-2 fw-semibold" href="{% url 'accounts:login' %}">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i> Đăng nhập
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2" href="{% url 'accounts:register' %}">
+                                    <i class="bi bi-person-plus me-2"></i> Đăng ký tài khoản
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Mobile Offcanvas Menu -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileMenu">
+    <div class="offcanvas-header border-bottom">
+        <div>
+            <h5 class="offcanvas-title font-serif fs-4 mb-0">{{ shop_setting.shop_name }}</h5>
+            <small class="text-muted">Boutique Flower Shop</small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+        <div class="p-3 bg-light border-bottom">
+            <form action="{% url 'catalog:product_list' %}" method="GET" class="d-flex">
+                <input type="search" name="q" class="form-control rounded-pill me-2" placeholder="Tìm hoa theo tên, dịp...">
+                <button type="submit" class="btn btn-flora px-3"><i class="bi bi-search"></i></button>
+            </form>
+        </div>
+        <div class="list-group list-group-flush">
+            <a href="{% url 'catalog:home' %}" class="list-group-item list-group-item-action py-3">Trang chủ</a>
+            <a href="{% url 'catalog:product_list' %}" class="list-group-item list-group-item-action py-3">Tất cả sản phẩm hoa</a>
+            
+            <!-- Danh mục -->
+            <div class="p-3 pb-1 text-uppercase text-muted fs-7 fw-bold">Danh mục hoa</div>
+            {% for cat in nav_categories %}
+                <a href="{% url 'catalog:category_detail' slug=cat.slug %}" class="list-group-item list-group-item-action ps-4 py-2">
+                    <i class="bi {{ cat.icon|default('bi-flower1') }} me-2 text-success"></i> {{ cat.name }}
+                </a>
+            {% endfor %}
+
+            <!-- Dịp tặng -->
+            <div class="p-3 pb-1 text-uppercase text-muted fs-7 fw-bold">Dịp tặng hoa</div>
+            {% for occ in nav_occasions %}
+                <a href="{% url 'catalog:occasion_detail' slug=occ.slug %}" class="list-group-item list-group-item-action ps-4 py-2">
+                    <i class="bi {{ occ.icon|default('bi-heart') }} me-2 text-danger"></i> {{ occ.name }}
+                </a>
+            {% endfor %}
+
+            <a href="{% url 'content:about' %}" class="list-group-item list-group-item-action py-3">Giới thiệu</a>
+            <a href="{% url 'content:contact' %}" class="list-group-item list-group-item-action py-3">Liên hệ</a>
+            <a href="{% url 'orders:tracking' %}" class="list-group-item list-group-item-action py-3 text-primary">
+                <i class="bi bi-geo-alt me-1"></i> Tra cứu đơn hàng
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search Modal -->
+<div class="modal fade" id="searchModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="font-serif mb-0">Tìm kiếm mẫu hoa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{% url 'catalog:product_list' %}" method="GET">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control form-control-lg rounded-start-pill ps-3" placeholder="Nhập tên hoa, mã SKU, màu sắc..." autofocus required>
+                        <button class="btn btn-flora rounded-end-pill px-4" type="submit">
+                            <i class="bi bi-search"></i> Tìm ngay
+                        </button>
+                    </div>
+                </form>
+                <div class="mt-3">
+                    <small class="text-muted d-block mb-2">Gợi ý tìm kiếm phổ biến:</small>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'catalog:product_list' %}?q=hoa+hồng" class="badge bg-light text-dark text-decoration-none border py-2 px-3">Hoa hồng</a>
+                        <a href="{% url 'catalog:product_list' %}?q=khai+trương" class="badge bg-light text-dark text-decoration-none border py-2 px-3">Hoa khai trương</a>
+                        <a href="{% url 'catalog:product_list' %}?q=sinh+nhật" class="badge bg-light text-dark text-decoration-none border py-2 px-3">Hoa sinh nhật</a>
+                        <a href="{% url 'catalog:product_list' %}?q=tana" class="badge bg-light text-dark text-decoration-none border py-2 px-3">Cúc Tana</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

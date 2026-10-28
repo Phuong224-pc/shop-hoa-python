@@ -1,0 +1,126 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Cài Đặt Cửa Hàng{% endblock %}
+{% block page_title %}Cài Đặt Cửa Hàng & Vận Hành{% endblock %}
+
+{% block dashboard_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="dash-card p-4 p-md-5">
+            <h4 class="font-serif fw-bold mb-4 pb-2 border-bottom">Cấu Hình Cửa Hàng {{ setting.shop_name }}</h4>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <!-- 1. Thông tin cửa hàng -->
+                <h6 class="fw-bold text-success mb-3"><i class="bi bi-shop me-2"></i> 1. Thông Tin Thương Hiệu & Showroom</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Tên cửa hàng *</label>
+                        <input type="text" name="shop_name" class="form-control" value="{{ setting.shop_name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Khẩu hiệu (Slogan)</label>
+                        <input type="text" name="slogan" class="form-control" value="{{ setting.slogan }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Điện thoại cố định</label>
+                        <input type="text" name="phone" class="form-control" value="{{ setting.phone }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Hotline đặt hoa *</label>
+                        <input type="text" name="hotline" class="form-control" value="{{ setting.hotline }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Email liên hệ</label>
+                        <input type="email" name="email" class="form-control" value="{{ setting.email }}">
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Địa chỉ cửa hàng *</label>
+                        <input type="text" name="address" class="form-control" value="{{ setting.address }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Giờ mở cửa hàng ngày</label>
+                        <input type="text" name="opening_hours" class="form-control" value="{{ setting.opening_hours }}">
+                    </div>
+                </div>
+
+                <!-- 2. Cấu hình Ngân hàng & VietQR -->
+                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-qr-code me-2"></i> 2. Thông Tin Ngân Hàng Nhận Tiền (Chuyển Khoản VietQR)</h6>
+                <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Mã ngân hàng (VietQR) *</label>
+                        <input type="text" name="bank_code" class="form-control text-uppercase" value="{{ setting.bank_code }}" placeholder="MB, VCB, TCB, ACB..." required>
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label fw-semibold">Tên đầy đủ của ngân hàng *</label>
+                        <input type="text" name="bank_name" class="form-control" value="{{ setting.bank_name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Số tài khoản ngân hàng *</label>
+                        <input type="text" name="bank_account_no" class="form-control" value="{{ setting.bank_account_no }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Chủ tài khoản (Không dấu) *</label>
+                        <input type="text" name="bank_account_name" class="form-control text-uppercase" value="{{ setting.bank_account_name }}" required>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="enable_vietqr" value="1" id="vqrCheck" {% if setting.enable_vietqr %}checked{% endif %}>
+                            <label class="form-check-label fw-semibold" for="vqrCheck">Bật phương thức thanh toán VietQR trên website</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Giao hàng & Vận hành -->
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-truck me-2"></i> 3. Chính Sách Giao Hàng & Thời Gian Chuẩn Bị</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Phí giao hàng chuẩn (VNĐ):</label>
+                        <input type="number" name="shipping_fee_default" class="form-control" value="{{ setting.shipping_fee_default|floatformat(0) }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Đơn hàng được MIỄN PHÍ giao (VNĐ):</label>
+                        <input type="number" name="free_shipping_threshold" class="form-control" value="{{ setting.free_shipping_threshold|floatformat(0) }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Thời gian cắm hoa tối thiểu (Giờ):</label>
+                        <input type="number" name="min_prep_hours" class="form-control" value="{{ setting.min_prep_hours }}">
+                        <small class="text-muted fs-7">Lead-time tối thiểu trước khi giao.</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Giờ ngừng nhận đơn trong ngày (0-23h):</label>
+                        <input type="number" name="same_day_cutoff_hour" class="form-control" value="{{ setting.same_day_cutoff_hour }}">
+                        <small class="text-muted fs-7">Sau giờ này khách chỉ được chọn giao ngày mai.</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Giới hạn đơn mỗi khung giờ (0 = vô hạn):</label>
+                        <input type="number" name="max_orders_per_slot" class="form-control" value="{{ setting.max_orders_per_slot }}">
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="enable_cod" value="1" id="codCheck" {% if setting.enable_cod %}checked{% endif %}>
+                            <label class="form-check-label fw-semibold" for="codCheck">Bật thanh toán COD</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="enable_store_pickup" value="1" id="pickupCheck" {% if setting.enable_store_pickup %}checked{% endif %}>
+                            <label class="form-check-label fw-semibold" for="pickupCheck">Cho phép nhận tại cửa hàng</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Chính sách hoa theo mùa -->
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-file-text me-2"></i> 4. Chính Sách Thay Thế Hoa Theo Mùa</h6>
+                <div class="mb-4">
+                    <textarea name="seasonal_policy_text" class="form-control" rows="3">{{ setting.seasonal_policy_text }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-flora px-4 py-2">
+                    <i class="bi bi-save me-1"></i> Lưu Cấu Hình Cửa Hàng
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

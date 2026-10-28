@@ -1,0 +1,165 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Hồ Sơ Khách Hàng: {{ customer.first_name|default(customer.username) }}{% endblock %}
+{% block page_title %}Chi Tiết Khách Hàng: {{ customer.first_name|default(customer.username) }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <a href="{% url 'dashboard:customer_list' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách khách hàng
+    </a>
+    <form action="{% url 'dashboard:customer_toggle_lock' pk=customer.pk %}" method="POST" class="d-inline">
+        {% csrf_token %}
+        {% if customer.profile.is_locked %}
+            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Bạn có chắc muốn MỞ KHÓA tài khoản này?');">
+                <i class="bi bi-unlock-fill me-1"></i> Mở khóa tài khoản
+            </button>
+        {% else %}
+            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc muốn KHÓA tài khoản này? Khách hàng sẽ không thể đăng nhập hoặc đặt hoa.');">
+                <i class="bi bi-lock-fill me-1"></i> Khóa tài khoản
+            </button>
+        {% endif %}
+    </form>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Cột Trái: Thông tin cơ bản & Thống kê cá nhân -->
+    <div class="col-lg-4">
+        <!-- Profile Card -->
+        <div class="dash-card p-4 mb-4 text-center">
+            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 fw-bold fs-2" style="width: 72px; height: 72px;">
+                {{ customer.first_name|default(customer.username)|slice(":1")|upper }}
+            </div>
+            <h5 class="fw-bold mb-1">{{ customer.first_name|default(customer.username) }}</h5>
+            <small class="text-muted d-block mb-3 font-monospace">@{{ customer.username }}</small>
+
+            <div class="text-start fs-7 border-top pt-3">
+                <div class="mb-2"><span class="text-muted">Email:</span> <strong>{{ customer.email }}</strong></div>
+                <div class="mb-2"><span class="text-muted">Số điện thoại:</span> <strong>{{ customer.profile.phone|default('Chưa cập nhật') }}</strong></div>
+                <div class="mb-2"><span class="text-muted">Giới tính:</span> {{ customer.profile.get_gender_display|default('Chưa rõ') }}</div>
+                <div class="mb-2"><span class="text-muted">Ngày sinh:</span> {{ customer.profile.date_of_birth|date("d/m/Y")|default('Chưa rõ') }}</div>
+                <div class="mb-2"><span class="text-muted">Ngày tham gia:</span> {{ customer.date_joined|date("d/m/Y H:i") }}</div>
+                <div><span class="text-muted">Trạng thái:</span> 
+                    {% if customer.profile.is_locked %}
+                        <span class="badge bg-danger">Đã khóa tài khoản</span>
+                    {% else %}
+                        <span class="badge bg-success">Đang hoạt động</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI cá nhân -->
+        <div class="dash-card p-4 mb-4">
+            <h6 class="font-serif fw-bold mb-3">Chỉ Số Mua Hàng</h6>
+            <div class="d-flex justify-content-between py-2 border-bottom fs-7">
+                <span class="text-muted">Tổng đơn hoàn thành:</span>
+                <strong class="text-success">{{ total_completed_orders }} đơn</strong>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom fs-7">
+                <span class="text-muted">Đơn đã hủy:</span>
+                <strong class="text-danger">{{ total_cancelled_orders }} đơn</strong>
+            </div>
+            <div class="d-flex justify-content-between pt-2 fs-7">
+                <span class="text-muted">Tổng chi tiêu:</span>
+                <strong class="text-success fs-6">{{ total_spent|currency }}</strong>
+            </div>
+        </div>
+
+        <!-- Sổ địa chỉ -->
+        <div class="dash-card p-4">
+            <h6 class="font-serif fw-bold mb-3">Sổ Địa Chỉ Giao Nhận</h6>
+            {% for addr in customer.addresses %}
+                <div class="p-2 border rounded-3 mb-2 fs-7 {% if addr.is_default %}border-success bg-light{% endif %}">
+                    <div class="fw-bold">{{ addr.full_name }} ({{ addr.phone }})</div>
+                    <small class="text-muted">{{ addr.street_address }}, {{ addr.ward }}, {{ addr.district }}, {{ addr.city }}</small>
+                </div>
+            {% else %}
+                <p class="text-muted fs-7 mb-0">Khách chưa lưu địa chỉ nào.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Cột Phải: Lịch sử đơn hàng & Sản phẩm đã mua -->
+    <div class="col-lg-8">
+        <!-- Lịch sử đơn hàng -->
+        <div class="dash-card p-4 mb-4">
+            <h5 class="font-serif fw-bold mb-3">Lịch Sử Đơn Đặt Hoa</h5>
+            <div class="table-responsive">
+                <table class="table dash-table mb-0 fs-7">
+                    <thead>
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Ngày đặt</th>
+                            <th>Người nhận</th>
+                            <th>Trạng thái</th>
+                            <th>Thanh toán</th>
+                            <th>Tổng tiền</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in orders %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'dashboard:order_detail' pk=o.pk %}" class="fw-bold text-success text-decoration-none">
+                                        #{{ o.order_number }}
+                                    </a>
+                                </td>
+                                <td class="text-muted">{{ o.created_at|date("d/m/Y H:i") }}</td>
+                                <td>{{ o.recipient_name }}</td>
+                                <td>{{ o.status|order_status_badge }}</td>
+                                <td>{{ o.payment_status|payment_status_badge }}</td>
+                                <td class="fw-bold">{{ o.total_amount|currency }}</td>
+                                <td>
+                                    <a href="{% url 'dashboard:order_detail' pk=o.pk %}" class="btn btn-sm btn-outline-secondary py-0">Xem</a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="7" class="text-center text-muted py-3">Khách chưa có đơn hàng nào.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Mẫu hoa đã mua -->
+        <div class="dash-card p-4">
+            <h5 class="font-serif fw-bold mb-3">Các Mẫu Hoa Đã Mua (Đơn Hoàn Tất)</h5>
+            <div class="table-responsive">
+                <table class="table dash-table mb-0 fs-7">
+                    <thead>
+                        <tr>
+                            <th>Tên mẫu hoa</th>
+                            <th>Biến thể</th>
+                            <th>Số lượng</th>
+                            <th>Giá mua</th>
+                            <th>Đơn hàng</th>
+                            <th>Ngày mua</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in purchased_items %}
+                            <tr>
+                                <td><strong>{{ item.product_name }}</strong></td>
+                                <td>{{ item.variant_name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td class="fw-bold text-success">{{ item.unit_price|currency }}</td>
+                                <td>
+                                    <a href="{% url 'dashboard:order_detail' pk=item.order.pk %}" class="text-decoration-none">
+                                        #{{ item.order.order_number }}
+                                    </a>
+                                </td>
+                                <td class="text-muted">{{ item.order.created_at|date("d/m/Y") }}</td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="6" class="text-center text-muted py-3">Chưa có sản phẩm hoàn tất nào.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

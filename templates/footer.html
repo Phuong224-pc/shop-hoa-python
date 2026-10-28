@@ -1,0 +1,72 @@
+{% load static core_tags %}
+
+<footer class="main-footer">
+    <div class="container">
+        <div class="row g-4 pb-5">
+            <!-- Brand & Intro -->
+            <div class="col-lg-4 col-md-6">
+                <h4 class="text-white font-serif mb-2">{{ shop_setting.shop_name }}</h4>
+                <p class="text-white-50 mb-3">{{ shop_setting.slogan }}</p>
+                <div class="d-flex flex-column gap-2 text-white-50">
+                    <div><i class="bi bi-geo-alt-fill text-warning me-2"></i> {{ shop_setting.address }}</div>
+                    <div><i class="bi bi-telephone-fill text-warning me-2"></i> Hotline: <strong class="text-white">{{ shop_setting.hotline }}</strong></div>
+                    <div><i class="bi bi-envelope-fill text-warning me-2"></i> {{ shop_setting.email }}</div>
+                    <div><i class="bi bi-clock-fill text-warning me-2"></i> {{ shop_setting.opening_hours }}</div>
+                </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <h5>Mẫu Hoa</h5>
+                <div class="footer-links">
+                    {% for cat in nav_categories|slice(":5") %}
+                        <a href="{% url 'catalog:category_detail' slug=cat.slug %}">{{ cat.name }}</a>
+                    {% endfor %}
+                    <a href="{% url 'catalog:product_list' %}">Tất cả sản phẩm</a>
+                </div>
+            </div>
+
+            <!-- Occasions -->
+            <div class="col-lg-3 col-md-6 col-6">
+                <h5>Dịp Tặng Hoa</h5>
+                <div class="footer-links">
+                    {% for occ in nav_occasions|slice(":5") %}
+                        <a href="{% url 'catalog:occasion_detail' slug=occ.slug %}">{{ occ.name }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Policies & Payment -->
+            <div class="col-lg-3 col-md-6">
+                <h5>Chính Sách & Hỗ Trợ</h5>
+                <div class="footer-links">
+                    <a href="{% url 'content:policy' page_type='SHIPPING_POLICY' %}">Chính sách giao hàng hẹn giờ</a>
+                    <a href="{% url 'content:policy' page_type='RETURN_POLICY' %}">Chính sách đổi trả & hoàn tiền</a>
+                    <a href="{% url 'content:policy' page_type='PAYMENT_POLICY' %}">Hướng dẫn thanh toán VietQR</a>
+                    <a href="{% url 'content:policy' page_type='CARE_GUIDE' %}">Cẩm nang chăm sóc hoa tươi</a>
+                    <a href="{% url 'content:policy' page_type='PRIVACY_POLICY' %}">Chính sách bảo mật thông tin</a>
+                </div>
+                <div class="mt-3">
+                    <span class="badge bg-dark border border-secondary p-2 d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-shield-check text-success fs-5"></i>
+                        <span>Thanh toán VietQR chuẩn Napas</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Copyright -->
+    <div class="footer-bottom text-center">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <div>
+                © {{ current_year }} <strong>{{ shop_setting.shop_name }}</strong>. All rights reserved. Đồ án website thương mại điện tử hoa tươi Django/Python.
+            </div>
+            <div class="d-flex gap-3">
+                <a href="{{ shop_setting.facebook_url }}" target="_blank" class="text-white-50"><i class="bi bi-facebook fs-5"></i></a>
+                <a href="{{ shop_setting.instagram_url }}" target="_blank" class="text-white-50"><i class="bi bi-instagram fs-5"></i></a>
+                <a href="tel:{{ shop_setting.zalo_phone }}" class="text-white-50"><i class="bi bi-chat-dots-fill fs-5"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static core_tags %}
+
+{% block title %}Mẫu Hoa Yêu Thích - {{ shop_setting.shop_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <h1 class="font-serif fs-2 mb-1">Mẫu Hoa Yêu Thích</h1>
+        <p class="text-muted mb-0">Danh sách các thiết kế hoa bạn đã lưu lại để tham khảo hoặc đặt tặng vào dịp thích hợp.</p>
+    </div>
+
+    {% if wishlist_items %}
+        <div class="row g-4">
+            {% for item in wishlist_items %}
+                <div class="col-6 col-md-4 col-lg-3">
+                    {% with product=item.product %}{% include 'shop/components/product_card.html' %}{% endwith %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state-box my-5">
+            <div class="empty-state-icon"><i class="bi bi-heart"></i></div>
+            <h4 class="font-serif mb-2">Chưa có mẫu hoa nào trong danh sách yêu thích</h4>
+            <p class="text-muted mb-4">Nhấp vào biểu tượng trái tim trên các mẫu hoa để lưu lại và xem lại bất cứ lúc nào.</p>
+            <a href="{% url 'catalog:product_list' %}" class="btn btn-flora">Khám phá mẫu hoa ngay</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

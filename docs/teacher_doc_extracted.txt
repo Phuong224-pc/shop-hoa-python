@@ -1,0 +1,168 @@
+TRƯỜNG ĐẠI HỌC VĂN LANG
+KHOA CÔNG NGHỆ THÔNG TIN
+(Chèn logo trường tại đây)
+BÁO CÁO ĐỒ ÁN MÔN HỌC
+LẬP TRÌNH PYTHON NÂNG CAO
+Mã học phần: 71ITSE31003 – Nhóm lớp: 253_71ITSE31003_01
+ĐỀ TÀI SỐ [...]:
+[TÊN ĐỀ TÀI – THEO DANH SÁCH ĐỒ ÁN HOẶC ĐỀ TÀI TỰ CHỌN ĐÃ ĐƯỢC GIẢNG VIÊN DUYỆT]
+Giảng viên hướng dẫn: Ths Nguyễn Thị Mỹ Linh
+Nhóm thực hiện: Nhóm [....] (tối đa 3 sinh viên)
+STT
+MSSV
+Họ và tên
+Nhiệm vụ chính
+1
+[.....]
+[.....]
+[.....]
+2
+[.....]
+[.....]
+[.....]
+3
+[.....]
+[.....]
+[.....]
+TP. Hồ Chí Minh, tháng [..] năm 20[..]
+NHẬN XÉT VÀ ĐÁNH GIÁ CỦA GIẢNG VIÊN
+................................................................................................................................................
+................................................................................................................................................
+................................................................................................................................................
+................................................................................................................................................
+Bảng đánh giá theo Rubric của học phần
+CLO
+Nội dung đánh giá
+Trọng số
+Điểm
+CLO2
+Thiết kế và xây dựng ứng dụng web Flask: template, form, database, email
+50%
+CLO3
+Lập trình mạng: urllib, API key, JSON/XML, lập trình mạng Internet
+10%
+CLO4
+Sử dụng thành thạo thư viện Python (Flask, flask-wtf, urllib, json, ...)
+20%
+CLO5
+Kỹ năng viết báo cáo, module hóa code, cấu trúc rõ ràng, dễ bảo trì
+10%
+CLO6
+Thái độ nghiêm túc, chủ động trong thực hiện và trình bày đồ án
+10%
+Tổng điểm
+100%
+MỤC LỤC
+1. GIỚI THIỆU ĐỀ TÀI4
+1.1. Mô tả bài toán4
+1.2. Mục tiêu và phạm vi4
+1.3. Công nghệ sử dụng4
+1.4. Phân công công việc trong nhóm4
+2. PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG4
+2.1. Chức năng của hệ thống4
+2.2. Thiết kế cơ sở dữ liệu4
+2.3. Thiết kế giao diện5
+3. XÂY DỰNG ỨNG DỤNG VỚI FLASK5
+3.1. Môi trường và cấu trúc dự án5
+3.2. Routes và xử lý nghiệp vụ5
+3.3. Templates với Jinja25
+3.4. Web Forms với Flask-WTF5
+3.5. Cơ sở dữ liệu với Flask-SQLAlchemy5
+3.6. Gửi email với Flask-Mail6
+3.7. Lập trình mạng và tích hợp API6
+3.8. Chức năng mở rộng của nhóm6
+4. KẾT QUẢ VÀ KIỂM THỬ6
+4.1. Kết quả giao diện6
+4.2. Kiểm thử chức năng6
+5. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN6
+TÀI LIỆU THAM KHẢO7
+PHỤ LỤC7
+[Nhấn chuột phải vào mục lục và chọn Update Field để cập nhật tự động theo Heading 1–3. Lưu ý: nội dung báo cáo giới hạn 5–10 trang, trình bày cô đọng.]
+1. GIỚI THIỆU ĐỀ TÀI
+1.1. Mô tả bài toán
+[Giới thiệu ngắn gọn đề tài (website bán hàng, hệ thống quản lý...); đối tượng người dùng; vấn đề thực tế mà ứng dụng giải quyết. Khoảng nửa trang.]
+1.2. Mục tiêu và phạm vi
+[Mục tiêu: xây dựng ứng dụng web hoàn chỉnh bằng Flask với các chức năng bắt buộc: đăng nhập/đăng ký, CRUD (thêm/sửa/xóa/hiển thị), tìm kiếm, phân trang; và các chức năng mở rộng của nhóm (thanh toán, gửi email, API...). Phạm vi: giới hạn nghiệp vụ, số lượng chức năng cam kết.]
+1.3. Công nghệ sử dụng
+[Liệt kê: Python 3.x, Flask, Flask-WTF, Flask-SQLAlchemy, Flask-Mail, Jinja2, Bootstrap, SQLite/MySQL, urllib/requests + JSON (nếu tích hợp API), Git/GitHub...]
+1.4. Phân công công việc trong nhóm
+[Bảng phân công: thành viên nào phụ trách chức năng nào (models, forms, routes, templates, kiểm thử, viết báo cáo) và mức độ đóng góp %. Đã có bảng thành viên ở trang bìa, tại đây ghi chi tiết theo chức năng.]
+2. PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG
+2.1. Chức năng của hệ thống
+[Liệt kê chức năng theo nhóm người dùng (khách, thành viên, quản trị). Vẽ sơ đồ chức năng hoặc use case (Hình 2.1). Đánh dấu rõ chức năng bắt buộc: đăng nhập/đăng ký, CRUD, tìm kiếm, phân trang; và chức năng mở rộng.]
+2.2. Thiết kế cơ sở dữ liệu
+[Sơ đồ quan hệ giữa các bảng/model (Hình 2.2). Mô tả các model SQLAlchemy theo Bảng 2.1: tên bảng, các cột, khóa chính/ngoại, quan hệ (one-to-many, many-to-many).]
+Bảng 2.1. Mô tả các bảng dữ liệu (model SQLAlchemy)
+Model/Bảng
+Cột chính
+Khóa
+Quan hệ / ghi chú
+User
+id, username, email, password_hash, role
+id (PK)
+1-n với Order (ví dụ)
+[...]
+[Điền theo đề tài]
+[...]
+[...]
+2.3. Thiết kế giao diện
+[Sơ đồ luồng màn hình chính; cấu trúc kế thừa template Jinja2 (base.html → các trang con); khung giao diện (wireframe) 2–3 màn hình quan trọng.]
+3. XÂY DỰNG ỨNG DỤNG VỚI FLASK
+[Chương này bám theo các nội dung đã thực hành (chương 1–7) và thể hiện phần mở rộng của nhóm. Chỉ trích các đoạn mã TIÊU BIỂU, không dán toàn bộ code.]
+3.1. Môi trường và cấu trúc dự án
+[Cách tạo virtual environment, cài đặt gói (pip install -r requirements.txt) — theo bài thực hành Installation. Cấu trúc thư mục dự án theo mô hình Large Application Structure: package app/, blueprints, app factory (create_app), file cấu hình config.py; kèm cây thư mục.]
+3.2. Routes và xử lý nghiệp vụ
+[Các route chính (@app.route / blueprint), phương thức GET/POST, xử lý đăng nhập/đăng ký (session hoặc Flask-Login), phân quyền. Theo bài thực hành Basic Application Structure.]
+3.3. Templates với Jinja2
+[Kế thừa template, truyền biến, vòng lặp/điều kiện trong Jinja2, tích hợp Bootstrap; phân trang khi hiển thị danh sách. Theo bài thực hành Templates.]
+3.4. Web Forms với Flask-WTF
+[Các lớp form (FlaskForm), validator, hiển thị lỗi, bảo vệ CSRF; form đăng ký/đăng nhập, form thêm/sửa dữ liệu, form tìm kiếm. Theo bài thực hành Web Forms.]
+3.5. Cơ sở dữ liệu với Flask-SQLAlchemy
+[Khai báo model, tạo CSDL, thao tác CRUD (query, add, commit, delete), migration (Flask-Migrate nếu dùng). Theo bài thực hành Databases.]
+3.6. Gửi email với Flask-Mail
+[Cấu hình SMTP, gửi email xác nhận đăng ký/đặt hàng/đặt lại mật khẩu. Theo bài thực hành Email. Nếu nhóm không dùng email, thay bằng chức năng tương đương và giải thích.]
+3.7. Lập trình mạng và tích hợp API
+[Bắt buộc thể hiện CLO3: dùng urllib/requests đọc dữ liệu JSON/XML từ API bên ngoài (thời tiết, tỷ giá, bản đồ, thanh toán...) hoặc tự xây dựng REST API trả về JSON cho ứng dụng; mô tả API key và cách gọi.]
+3.8. Chức năng mở rộng của nhóm
+[Điểm cộng sáng tạo: thanh toán trực tuyến, giỏ hàng, thống kê biểu đồ, upload ảnh, chatbot, triển khai Docker/hosting... Mô tả ngắn cách thực hiện.]
+4. KẾT QUẢ VÀ KIỂM THỬ
+4.1. Kết quả giao diện
+[Ảnh chụp 4–6 màn hình chính (trang chủ, đăng nhập, danh sách + tìm kiếm + phân trang, thêm/sửa dữ liệu, chức năng mở rộng), mỗi hình có đánh số và chú thích ngắn.]
+4.2. Kiểm thử chức năng
+[Bảng kiểm thử các chức năng chính theo Bảng 4.1: kịch bản, dữ liệu vào, kết quả mong đợi, kết quả thực tế (Đạt/Không đạt).]
+Bảng 4.1. Kết quả kiểm thử chức năng
+TT
+Chức năng / kịch bản
+Dữ liệu thử
+Kết quả
+Đánh giá
+1
+Đăng ký tài khoản mới
+[...]
+[...]
+Đạt
+2
+[...]
+[...]
+[...]
+[...]
+5. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN
+[Tóm tắt các chức năng đã hoàn thành so với mục tiêu; kỹ năng đạt được (Flask, form, database, email, API); hạn chế còn tồn tại; 2–3 hướng phát triển (triển khai thực tế, bổ sung API, tối ưu bảo mật...). Khoảng nửa trang.]
+TÀI LIỆU THAM KHẢO
+[Trình bày theo chuẩn IEEE, đánh số theo thứ tự trích dẫn. Ví dụ:]
+[1] M. Grinberg, Flask Web Development: Developing Web Applications with Python, 2nd ed. Sebastopol, CA: O'Reilly Media, 2018.
+[2] M. Grinberg, "The Flask Mega-Tutorial," blog.miguelgrinberg.com. [Ngày truy cập: ...].
+[3] Pallets Projects, "Flask Documentation," flask.palletsprojects.com. [Ngày truy cập: ...].
+[4] [Tài liệu/API khác nhóm sử dụng].
+PHỤ LỤC
+Phụ lục A. Mã nguồn và hướng dẫn chạy: [Link GitHub của nhóm; các bước chạy: tạo venv → pip install -r requirements.txt → flask run; tài khoản demo (admin/user) để giảng viên kiểm tra.]
+Phụ lục B. Dữ liệu mẫu: [File CSDL mẫu hoặc script tạo dữ liệu (seed) kèm mã nguồn.]
+QUY ĐỊNH TRÌNH BÀY VÀ NỘP ĐỒ ÁN
+(Trang này dành cho sinh viên tham khảo – XÓA trước khi nộp báo cáo)
+1. Định dạng: Khổ giấy A4; font Times New Roman, cỡ chữ 13; giãn dòng 1,5; đánh số trang (mẫu này đã thiết lập sẵn).
+2. Độ dài: Nội dung báo cáo giới hạn từ 5 đến 10 trang (từ mục 1 đến hết mục 5, không kể bìa, mục lục, phụ lục). Trình bày cô đọng, ưu tiên hình ảnh kết quả và bảng.
+3. Nhóm: Tối đa 3 sinh viên/nhóm. Ghi rõ phân công và mức đóng góp của từng thành viên.
+4. Yêu cầu kỹ thuật bắt buộc: Ứng dụng Flask phải chạy được, có đăng nhập/đăng ký, CRUD, tìm kiếm, phân trang; sử dụng template (Jinja2), form (Flask-WTF), database (Flask-SQLAlchemy), email (Flask-Mail) và có yếu tố lập trình mạng (urllib/API/JSON). Khuyến khích chức năng mở rộng: thanh toán, API, triển khai thực tế...
+5. Sản phẩm nộp: (1) Báo cáo .docx và .pdf; (2) Mã nguồn đầy đủ (kèm requirements.txt, KHÔNG kèm thư mục venv) hoặc link GitHub; (3) CSDL/dữ liệu mẫu. Quy cách đặt tên file: MãSV_Họ và tên SV_... theo quy định của đề.
+6. Báo cáo: Báo cáo đồ án vào tuần thứ 11 của học kỳ; các thành viên đều phải nắm được toàn bộ hệ thống để trả lời vấn đáp.
+7. Thang điểm: Theo Rubric ở đầu báo cáo: CLO2 (Flask: template, form, database, email) 50%; CLO3 (lập trình mạng) 10%; CLO4 (thư viện Python) 20%; CLO5 (báo cáo, module hóa code) 10%; CLO6 (thái độ) 10%.

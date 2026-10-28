@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+{% load static core_tags %}
+
+{% block title %}{{ shop_setting.shop_name }} - Nghệ Thuật Hoa Tươi Cao Cấp{% endblock %}
+
+{% block content %}
+<!-- 1. Hero Banners Carousel -->
+<section class="py-4">
+    <div class="container">
+        <div id="heroCarousel" class="carousel slide carousel-fade shadow-sm" data-bs-ride="carousel" style="border-radius: var(--flora-radius-lg); overflow: hidden;">
+            <div class="carousel-indicators">
+                {% for banner in banners %}
+                    <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ loop.index0 }}" class="{% if loop.first %}active{% endif %}"></button>
+                {% endfor %}
+            </div>
+            <div class="carousel-inner">
+                {% for banner in banners %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}" data-bs-interval="5000">
+                        <div class="hero-banner-item" style="background: linear-gradient(90deg, rgba(15, 30, 22, 0.88) 0%, rgba(15, 30, 22, 0.6) 50%, rgba(15, 30, 22, 0.15) 100%), url('{{ banner.image.url }}') center center / cover no-repeat;">
+                            <div class="hero-content">
+                                {% if banner.badge %}
+                                    <span class="hero-badge">{{ banner.badge }}</span>
+                                {% endif %}
+                                <h2 class="hero-title">{{ banner.title }}</h2>
+                                <p class="hero-subtitle">{{ banner.subtitle }}</p>
+                                <a href="{{ banner.link|default('/products/') }}" class="btn btn-flora">
+                                    {{ banner.button_text|default('Khám phá ngay') }} <i class="bi bi-arrow-right ms-2"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="carousel-item active">
+                        <div class="hero-banner-item" style="background-color: var(--flora-primary);">
+                            <div class="hero-content">
+                                <span class="hero-badge">Chào Mừng Quý Khách</span>
+                                <h2 class="hero-title">{{ shop_setting.shop_name }}</h2>
+                                <p class="hero-subtitle">{{ shop_setting.slogan }}</p>
+                                <a href="{% url 'catalog:product_list' %}" class="btn btn-flora">Khám phá mẫu hoa</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon"></span>
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- 2. Services Highlights Bar -->
+<section class="py-3">
+    <div class="container">
+        <div class="row g-3 text-center">
+            <div class="col-6 col-md-3">
+                <div class="bg-white p-3 rounded-4 shadow-sm border border-light h-100 d-flex align-items-center gap-3">
+                    <div class="fs-1 text-success"><i class="bi bi-truck"></i></div>
+                    <div class="text-start">
+                        <h6 class="mb-0 fw-bold">Giao hoa hỏa tốc</h6>
+                        <small class="text-muted">Giao trong 2h nội thành</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="bg-white p-3 rounded-4 shadow-sm border border-light h-100 d-flex align-items-center gap-3">
+                    <div class="fs-1 text-danger"><i class="bi bi-flower2"></i></div>
+                    <div class="text-start">
+                        <h6 class="mb-0 fw-bold">100% Hoa tươi mới</h6>
+                        <small class="text-muted">Nhập mới mỗi ngày</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="bg-white p-3 rounded-4 shadow-sm border border-light h-100 d-flex align-items-center gap-3">
+                    <div class="fs-1 text-warning"><i class="bi bi-camera"></i></div>
+                    <div class="text-start">
+                        <h6 class="mb-0 fw-bold">Duyệt ảnh trước giao</h6>
+                        <small class="text-muted">Chụp ảnh hoa gửi khách</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="bg-white p-3 rounded-4 shadow-sm border border-light h-100 d-flex align-items-center gap-3">
+                    <div class="fs-1 text-primary"><i class="bi bi-envelope-heart"></i></div>
+                    <div class="text-start">
+                        <h6 class="mb-0 fw-bold">Thiệp chúc mừng free</h6>
+                        <small class="text-muted">Tặng kèm thiệp viết tay</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. Mua hoa theo Dịp tặng -->
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div>
+                <span class="text-uppercase text-muted fw-bold" style="font-size: 12px; letter-spacing: 2px;">Trao gửi cảm xúc</span>
+                <h2 class="font-serif mb-0">Mẫu Hoa Theo Dịp Tặng</h2>
+            </div>
+            <a href="{% url 'catalog:product_list' %}" class="btn-flora-outline btn-sm">Xem tất cả <i class="bi bi-arrow-right ms-1"></i></a>
+        </div>
+        <div class="row g-3">
+            {% for occ in occasions %}
+                <div class="col-6 col-md-4 col-lg-2">
+                    <a href="{% url 'catalog:occasion_detail' slug=occ.slug %}" class="category-bubble-card">
+                        <div class="category-icon-box">
+                            <i class="bi {{ occ.icon|default('bi-heart') }}"></i>
+                        </div>
+                        <h6 class="mb-1 text-dark fw-bold">{{ occ.name }}</h6>
+                        <small class="text-muted">{{ occ.products.count() }} mẫu hoa</small>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- 4. Mua hoa theo Kiểu trình bày (Categories) -->
+<section class="py-4 bg-white border-top border-bottom">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="text-uppercase text-muted fw-bold" style="font-size: 12px; letter-spacing: 2px;">Phong cách cắm hoa</span>
+            <h2 class="font-serif mb-2">Kiểu Dáng Trình Bày Tinh Tế</h2>
+            <p class="text-muted mx-auto" style="max-width: 600px;">Từng kiểu dáng mang đến một cung bậc cảm xúc riêng, phù hợp cho mọi không gian trang trí và sự kiện.</p>
+        </div>
+        <div class="row g-4 justify-content-center">
+            {% for cat in categories %}
+                <div class="col-6 col-md-4 col-lg">
+                    <a href="{% url 'catalog:category_detail' slug=cat.slug %}" class="card border-0 shadow-sm text-center h-100 overflow-hidden text-decoration-none" style="border-radius: 16px;">
+                        {% if cat.image %}
+                            <img src="{{ cat.image.url }}" alt="{{ cat.name }}" class="card-img-top" style="height: 180px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold text-dark mb-1">{{ cat.name }}</h6>
+                            <small class="text-muted d-block">{{ cat.description|truncatewords(6) }}</small>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- 5. Mẫu hoa Bán chạy nhất từ dữ liệu đơn hàng thật -->
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div>
+                <span class="badge bg-danger text-white mb-2 px-3 py-1">Best Sellers</span>
+                <h2 class="font-serif mb-0">Mẫu Hoa Được Yêu Thích Nhất</h2>
+            </div>
+            <a href="{% url 'catalog:product_list' %}?sort=bestseller" class="btn-flora-outline btn-sm">Xem tất cả <i class="bi bi-arrow-right ms-1"></i></a>
+        </div>
+        <div class="row g-4">
+            {% for product in bestseller_products %}
+                <div class="col-6 col-md-4 col-lg-3">
+                    {% include 'shop/components/product_card.html' %}
+                </div>
+            {% else %}
+                <div class="col-12 text-center py-4">
+                    <p class="text-muted">Đang cập nhật các mẫu hoa bán chạy nhất.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- 6. Bộ sưu tập Nổi bật -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div>
+                <span class="text-uppercase text-muted fw-bold" style="font-size: 12px; letter-spacing: 2px;">Flora Signature</span>
+                <h2 class="font-serif mb-0">Bộ Sưu Tập Nổi Bật</h2>
+            </div>
+            <a href="{% url 'catalog:product_list' %}" class="btn-flora-outline btn-sm">Khám phá toàn bộ</a>
+        </div>
+        <div class="row g-4">
+            {% for product in featured_products %}
+                <div class="col-6 col-md-4 col-lg-3">
+                    {% include 'shop/components/product_card.html' %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- 7. Mã ưu đãi đang có hiệu lực -->
+{% if active_coupons %}
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-4">
+            <span class="text-uppercase text-muted fw-bold" style="font-size: 12px; letter-spacing: 2px;">Tiết kiệm hơn</span>
+            <h2 class="font-serif mb-0">Mã Khuyến Mãi Đang Áp Dụng</h2>
+        </div>
+        <div class="row g-3 justify-content-center">
+            {% for cp in active_coupons %}
+                <div class="col-md-4">
+                    <div class="p-3 bg-white border border-warning rounded-4 shadow-sm d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-warning text-dark fw-bold mb-1">{{ cp.code }}</span>
+                            <h6 class="mb-1 fw-bold text-dark">{{ cp.title }}</h6>
+                            <small class="text-muted">Đơn tối thiểu: {{ cp.min_order_amount|currency }}</small>
+                        </div>
+                        <button class="btn btn-sm btn-flora-outline" onclick="navigator.clipboard.writeText('{{ cp.code }}'); showToast('Đã sao chép mã {{ cp.code }}', 'success');">
+                            Copy
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- 8. Đánh giá của khách hàng thực tế -->
+{% if customer_reviews %}
+<section class="py-5 bg-white border-top">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="text-uppercase text-muted fw-bold" style="font-size: 12px; letter-spacing: 2px;">Cảm nhận thực tế</span>
+            <h2 class="font-serif mb-2">Khách Hàng Nói Về {{ shop_setting.shop_name }}</h2>
+            <p class="text-muted">Những đánh giá và cảm xúc chân thực từ các khách hàng đã đặt và trải nghiệm hoa tươi.</p>
+        </div>
+        <div class="row g-4">
+            {% for rv in customer_reviews %}
+                <div class="col-md-4">
+                    <div class="p-4 bg-light rounded-4 h-100 d-flex flex-column border border-light">
+                        <div class="mb-2 text-warning">
+                            {% for i in "12345"|make_list %}
+                                {% if loop.index <= rv.rating %}
+                                    <i class="bi bi-star-fill"></i>
+                                {% else %}
+                                    <i class="bi bi-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <p class="fst-italic text-dark flex-grow-1">"{{ rv.comment }}"</p>
+                        <div class="d-flex align-items-center gap-2 pt-2 border-top">
+                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px;">
+                                {{ rv.user.first_name|default(rv.user.username)|slice(":1")|upper }}
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">{{ rv.user.first_name|default(rv.user.username) }}</h6>
+                                <small class="text-muted">Đã mua: {{ rv.product.name }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

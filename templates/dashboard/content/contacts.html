@@ -1,0 +1,76 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Tin Nhắn Liên Hệ{% endblock %}
+{% block page_title %}Tin Nhắn & Yêu Cầu Tư Vấn Khách Hàng{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-serif fw-bold mb-1">Tin Nhắn Khách Gửi Qua Website</h4>
+        <small class="text-muted">Theo dõi và phân công nhân viên liên hệ tư vấn</small>
+    </div>
+</div>
+
+<div class="dash-card">
+    <div class="table-responsive">
+        <table class="table dash-table mb-0 fs-7">
+            <thead>
+                <tr>
+                    <th>Khách hàng</th>
+                    <th>Chủ đề</th>
+                    <th>Nội dung</th>
+                    <th>Thời gian gửi</th>
+                    <th>Trạng thái & Phụ trách</th>
+                    <th class="text-end">Cập nhật</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in messages_qs %}
+                    <tr>
+                        <td>
+                            <strong class="d-block text-dark">{{ m.full_name }}</strong>
+                            <small class="text-muted">{{ m.phone }} | {{ m.email }}</small>
+                        </td>
+                        <td><strong>{{ m.subject }}</strong></td>
+                        <td style="max-width: 300px;">
+                            <p class="mb-1">{{ m.message }}</p>
+                            {% if m.internal_notes %}
+                                <small class="text-muted fst-italic">Ghi chú: {{ m.internal_notes }}</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">{{ m.created_at|date("d/m/Y H:i") }}</td>
+                        <td>
+                            {% if m.status == 'NEW' %}
+                                <span class="badge bg-danger">Mới tiếp nhận</span>
+                            {% elif m.status == 'PROCESSING' %}
+                                <span class="badge bg-warning text-dark">Đang xử lý</span>
+                            {% else %}
+                                <span class="badge bg-success">Đã giải quyết</span>
+                            {% endif %}
+                            {% if m.assigned_to %}
+                                <small class="text-muted d-block mt-1">Phụ trách: {{ m.assigned_to.username }}</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <form action="{% url 'dashboard:contact_message_update' pk=m.pk %}" method="POST" class="d-inline-flex gap-1">
+                                {% csrf_token %}
+                                <select name="status" class="form-select form-select-sm" style="width: 120px;">
+                                    <option value="NEW" {% if m.status == 'NEW' %}selected{% endif %}>Mới</option>
+                                    <option value="PROCESSING" {% if m.status == 'PROCESSING' %}selected{% endif %}>Đang xử lý</option>
+                                    <option value="RESOLVED" {% if m.status == 'RESOLVED' %}selected{% endif %}>Đã xong</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Lưu</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Chưa có tin nhắn liên hệ nào.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

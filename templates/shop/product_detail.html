@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+{% load static core_tags %}
+
+{% block title %}{{ product.name }} - {{ shop_setting.shop_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'catalog:home' %}">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'catalog:product_list' %}">Hoa tươi</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'catalog:category_detail' slug=product.primary_category.slug %}">{{ product.primary_category.name }}</a></li>
+            <li class="breadcrumb-item active">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-5">
+        <!-- 1. Product Images Gallery -->
+        <div class="col-lg-6">
+            <div class="sticky-top" style="top: 100px; z-index: 10;">
+                <div class="detail-gallery-main">
+                    {% if product.main_image %}
+                        <img id="main-gallery-img" src="{{ product.main_image.url }}" alt="{{ product.name }}" class="w-100" style="max-height: 520px; object-fit: cover;">
+                    {% else %}
+                        <div class="p-5 text-center bg-light text-muted">Chưa có ảnh</div>
+                    {% endif %}
+                </div>
+
+                <!-- Thumbnails -->
+                {% if images or product.main_image %}
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if product.main_image %}
+                            <div class="detail-gallery-thumb active" data-full-src="{{ product.main_image.url }}">
+                                <img src="{{ product.main_image.url }}" alt="Thumbnail" class="w-100 h-100 object-fit-cover">
+                            </div>
+                        {% endif %}
+                        {% for img in images %}
+                            <div class="detail-gallery-thumb" data-full-src="{{ img.image.url }}">
+                                <img src="{{ img.image.url }}" alt="Thumbnail" class="w-100 h-100 object-fit-cover">
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 2. Product Form & Details -->
+        <div class="col-lg-6">
+            <div class="mb-2">
+                <span class="badge bg-light text-success border border-success px-2 py-1">{{ product.primary_category.name }}</span>
+                <span class="badge bg-light text-muted border px-2 py-1">SKU: <span id="product-display-sku">{{ default_variant.sku }}</span></span>
+            </div>
+
+            <h1 class="font-serif fs-2 mb-2">{{ product.name }}</h1>
+
+            <!-- Rating & Sold -->
+            <div class="d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
+                <div class="text-warning">
+                    <i class="bi bi-star-fill"></i>
+                    <strong class="text-dark ms-1">{{ product.average_rating }}</strong>
+                    <span class="text-muted fs-7">({{ product.approved_reviews_count }} đánh giá đã mua)</span>
+                </div>
+                <div class="text-muted fs-7 border-start ps-3">
+                    Đã bán: <strong class="text-dark">{{ product.total_sold_count }}</strong>
+                </div>
+                <div class="ms-auto">
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-wishlist-toggle {% if is_favorited %}active{% endif %}" data-product-id="{{ product.id }}">
+                        <i class="bi {% if is_favorited %}bi-heart-fill{% else %}bi-heart{% endif %} me-1"></i> Yêu thích
+                    </button>
+                </div>
+            </div>
+
+            <!-- Price & Stock Display -->
+            <div class="p-3 bg-light rounded-4 mb-4 d-flex align-items-baseline gap-3">
+                <span class="fs-2 fw-bold text-success" id="product-display-price">
+                    {{ default_variant.effective_price|currency }}
+                </span>
+                <span class="fs-5 text-muted text-decoration-line-through" id="product-original-price" {% if not default_variant.is_on_sale %}style="display:none;"{% endif %}>
+                    {{ default_variant.price|currency }}
+                </span>
+                <span class="ms-auto fs-7 badge bg-white text-dark border">
+                    Tồn kho: <strong id="product-display-stock">{{ default_variant.stock }}</strong>
+                </span>
+            </div>
+
+            <!-- Short description -->
+            <p class="text-muted mb-4">{{ product.short_description }}</p>
+
+            <!-- Add to Cart Form -->
+            <form action="{% url 'cart:add_to_cart' %}" method="POST" id="addToCartForm">
+                {% csrf_token %}
+
+                <!-- Biến thể kích thước -->
+                <div class="mb-4">
+                    <label class="fw-bold mb-2 d-block">Chọn Kích Thước / Phiên Bản Mẫu Hoa:</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for variant in variants %}
+                            <label class="variant-btn-radio">
+                                {% if variant.stock <= 0 %}
+                                    <input type="radio" name="variant_id" value="{{ variant.id }}" 
+                                           data-price="{{ variant.price }}" 
+                                           data-sale-price="{{ variant.sale_price|default(0) }}"
+                                           data-stock="{{ variant.stock }}"
+                                           data-sku="{{ variant.sku }}"
+                                           disabled>
+                                {% else %}
+                                    <input type="radio" name="variant_id" value="{{ variant.id }}" 
+                                           data-price="{{ variant.price }}" 
+                                           data-sale-price="{{ variant.sale_price|default(0) }}"
+                                           data-stock="{{ variant.stock }}"
+                                           data-sku="{{ variant.sku }}"
+                                           {% if variant == default_variant %}checked{% endif %}>
+                                {% endif %}
+                                <div class="variant-card-box {% if variant.stock <= 0 %}opacity-50{% endif %}">
+                                    <div class="fw-bold fs-7">{{ variant.name }}</div>
+                                    <div class="text-success fs-7">{{ variant.effective_price|currency }}</div>
+                                    {% if variant.stock <= 0 %}
+                                        <small class="text-danger d-block">Hết hàng</small>
+                                    {% endif %}
+                                </div>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Phụ kiện chọn kèm -->
+                {% if accessories %}
+                <div class="mb-4">
+                    <label class="fw-bold mb-2 d-block">Phụ Kiện Chọn Kèm (Tùy chọn):</label>
+                    <div class="card p-3 border-light shadow-sm rounded-4">
+                        {% for acc in accessories %}
+                            <div class="form-check d-flex align-items-center justify-content-between mb-2">
+                                <div>
+                                    <input class="form-check-input" type="checkbox" name="accessories" value="{{ acc.id }}" id="acc_{{ acc.id }}">
+                                    <label class="form-check-label fs-7 ms-2" for="acc_{{ acc.id }}">
+                                        <strong>{{ acc.name }}</strong>
+                                        <small class="text-muted d-block">{{ acc.description }}</small>
+                                    </label>
+                                </div>
+                                <span class="badge bg-light text-dark border">
+                                    {% if acc.price > 0 %}+{{ acc.price|currency }}{% else %}Miễn phí{% endif %}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Thông điệp thiệp chúc mừng & Ẩn danh -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="fw-bold mb-0">Lời Nhắn Gửi Trên Thiệp (Tặng kèm miễn phí):</label>
+                    </div>
+                    <textarea name="card_message" class="form-control rounded-3 mb-2" rows="2" placeholder="Ví dụ: Chúc mừng sinh nhật em gái yêu thương, chúc em tuổi mới luôn rực rỡ và hạnh phúc..."></textarea>
+                    
+                    <div class="row g-2">
+                        <div class="col-md-7">
+                            <input type="text" name="card_sender_name" class="form-control form-control-sm rounded-3" placeholder="Tên người gửi ghi trên thiệp (Ví dụ: Anh Nam, Bạn thân...)">
+                        </div>
+                        <div class="col-md-5 d-flex align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_anonymous" value="1" id="anonCheck">
+                                <label class="form-check-label fs-7" for="anonCheck">
+                                    Ẩn danh với người nhận
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Số lượng & Buttons -->
+                <div class="row g-3 align-items-center mb-4">
+                    <div class="col-auto">
+                        <label class="fw-bold me-2">Số lượng:</label>
+                    </div>
+                    <div class="col-auto">
+                        <div class="input-group" style="width: 120px;">
+                            <button class="btn btn-outline-secondary" type="button" onclick="const q = document.getElementById('qtyInput'); q.value = Math.max(1, (parseInt(q.value) || 1) - 1);">-</button>
+                            <input type="number" id="qtyInput" name="quantity" class="form-control text-center" value="1" min="1" max="99">
+                            <button class="btn btn-outline-secondary" type="button" onclick="const q = document.getElementById('qtyInput'); q.value = (parseInt(q.value) || 1) + 1;">+</button>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-flora flex-grow-1">
+                                <i class="bi bi-cart-plus me-1"></i> Thêm vào giỏ
+                            </button>
+                            <button type="submit" name="buy_now" value="1" class="btn btn-flora-secondary flex-grow-1">
+                                Mua ngay
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Cam kết dịch vụ -->
+            <div class="p-3 bg-white border border-light shadow-sm rounded-4 text-muted fs-7">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <i class="bi bi-check-circle-fill text-success"></i> Giao hoa đúng giờ hẹn, bọc giữ ẩm chuyên nghiệp.
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <i class="bi bi-check-circle-fill text-success"></i> Chụp ảnh hoa thật gửi bạn xác nhận trước khi giao.
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill text-success"></i> Đổi trả hoặc hoàn tiền 100% nếu hoa không đạt chất lượng cam kết.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Tabs: Mô tả, Thành phần, Hướng dẫn chăm sóc, Đánh giá -->
+    <div class="mt-5 pt-4 border-top">
+        <ul class="nav nav-tabs nav-fill mb-4" id="productTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active fw-bold py-3" id="desc-tab" data-bs-toggle="tab" data-bs-target="#descTab">
+                    Mô Tả & Ý Nghĩa Hoa
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-bold py-3" id="comp-tab" data-bs-toggle="tab" data-bs-target="#compTab">
+                    Thành Phần Hoa & Phụ Liệu
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-bold py-3" id="care-tab" data-bs-toggle="tab" data-bs-target="#careTab">
+                    Hướng Dẫn Chăm Sóc
+                </button>
+            </li>
+            {% if shop_setting.seasonal_policy_text or product.seasonal_policy_notes %}
+            <li class="nav-item">
+                <button class="nav-link fw-bold py-3" id="season-tab" data-bs-toggle="tab" data-bs-target="#seasonTab">
+                    Chính Sách Hoa Theo Mùa
+                </button>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+                <button class="nav-link fw-bold py-3" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviewsTab">
+                    Đánh Giá Khách Hàng ({{ reviews|length }})
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content p-4 bg-white rounded-4 shadow-sm border border-light" id="productTabsContent">
+            <!-- Tab 1: Mô tả -->
+            <div class="tab-pane fade show active" id="descTab">
+                <div class="lh-lg" style="white-space: pre-line;">{{ product.description }}</div>
+            </div>
+
+            <!-- Tab 2: Thành phần -->
+            <div class="tab-pane fade" id="compTab">
+                <h6 class="fw-bold mb-3">Thành phần chi tiết của mẫu hoa:</h6>
+                <p class="fs-6 text-dark">{{ product.flower_composition }}</p>
+                <div class="mt-3">
+                    <span class="fw-semibold text-muted fs-7">Các loài hoa chủ đạo:</span>
+                    <div class="d-flex gap-2 mt-1">
+                        {% for ft in product.flower_types %}
+                            <a href="{% url 'catalog:flower_type_detail' slug=ft.slug %}" class="badge bg-light text-dark border px-3 py-2 text-decoration-none">
+                                {{ ft.name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Chăm sóc -->
+            <div class="tab-pane fade" id="careTab">
+                <h6 class="fw-bold mb-3">Để hoa tươi lâu và bền màu nhất:</h6>
+                <div class="lh-lg" style="white-space: pre-line;">{{ product.care_instructions }}</div>
+            </div>
+
+            <!-- Tab 4: Chính sách hoa theo mùa -->
+            {% if shop_setting.seasonal_policy_text or product.seasonal_policy_notes %}
+            <div class="tab-pane fade" id="seasonTab">
+                <div class="alert alert-info border-0 mb-3">
+                    <i class="bi bi-info-circle-fill me-2"></i> <strong>Lưu ý về hoa tự nhiên:</strong>
+                </div>
+                <p class="lh-lg">{{ shop_setting.seasonal_policy_text }}</p>
+                {% if product.seasonal_policy_notes %}
+                    <p class="mt-2 text-muted fst-italic">{{ product.seasonal_policy_notes }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Tab 5: Đánh giá -->
+            <div class="tab-pane fade" id="reviewsTab">
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <h5 class="font-serif mb-4">Nhận xét từ khách hàng thực tế</h5>
+                        {% for rv in reviews %}
+                            <div class="p-3 mb-3 bg-light rounded-3 border border-light">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div>
+                                        <strong>{{ rv.user.first_name|default(rv.user.username) }}</strong>
+                                        <span class="badge bg-success-subtle text-success ms-2"><i class="bi bi-patch-check-fill"></i> Đã mua hàng</span>
+                                    </div>
+                                    <small class="text-muted">{{ rv.created_at|date("d/m/Y") }}</small>
+                                </div>
+                                <div class="text-warning mb-2 fs-7">
+                                    {% for i in "12345"|make_list %}
+                                        {% if loop.index <= rv.rating %}
+                                            <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                            <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <p class="mb-0 text-dark">{{ rv.comment }}</p>
+
+                                {% if rv.admin_response %}
+                                    <div class="mt-2 p-2 bg-white rounded border-start border-4 border-success fs-7">
+                                        <strong>Flora Flower phản hồi:</strong> {{ rv.admin_response }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên trải nghiệm và chia sẻ cảm nhận!</p>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="card p-4 border border-light shadow-sm rounded-4">
+                            <h5 class="font-serif mb-3">Viết đánh giá mẫu hoa</h5>
+                            {% if can_review %}
+                                <form action="{% url 'reviews:add_review' product_id=product.id %}" method="POST">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Đánh giá số sao:</label>
+                                        <select name="rating" class="form-select">
+                                            <option value="5" selected>5 sao (Tuyệt vời - Rất hài lòng)</option>
+                                            <option value="4">4 sao (Hài lòng)</option>
+                                            <option value="3">3 sao (Bình thường)</option>
+                                            <option value="2">2 sao (Chưa ưng ý)</option>
+                                            <option value="1">1 sao (Không hài lòng)</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Cảm nhận của bạn:</label>
+                                        <textarea name="comment" rows="4" class="form-control" placeholder="Chia sẻ về độ tươi, cách cắm hoa, thái độ giao hàng..." required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-flora w-100">Gửi đánh giá</button>
+                                </form>
+                            {% elif user.is_authenticated %}
+                                <div class="p-3 bg-light rounded text-muted fs-7 text-center">
+                                    <i class="bi bi-shield-lock fs-3 d-block mb-2 text-secondary"></i>
+                                    Chỉ những khách hàng đã đặt và hoàn tất đơn hàng chứa mẫu hoa này mới có thể viết đánh giá thực tế.
+                                </div>
+                            {% else %}
+                                <div class="p-3 bg-light rounded text-muted fs-7 text-center">
+                                    <i class="bi bi-person-lock fs-3 d-block mb-2 text-secondary"></i>
+                                    Vui lòng <a href="{% url 'accounts:login' %}?next={{ request.path }}">đăng nhập</a> để viết đánh giá.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Related Products -->
+    {% if related_products %}
+    <div class="mt-5 pt-4">
+        <h3 class="font-serif fs-3 mb-4 text-center">Mẫu Hoa Cùng Phong Cách</h3>
+        <div class="row g-4">
+            {% for rel in related_products %}
+                <div class="col-6 col-md-3">
+                    {% with product=rel %}{% include 'shop/components/product_card.html' %}{% endwith %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

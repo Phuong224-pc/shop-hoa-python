@@ -1,0 +1,128 @@
+{% extends 'dashboard/base.html' %}
+{% load static core_tags %}
+
+{% block title %}Quản Lý Đơn Hàng Hoa{% endblock %}
+{% block page_title %}Danh Sách Đơn Đặt Hoa{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-serif fw-bold mb-1">Tất Cả Đơn Đặt Hoa</h4>
+        <small class="text-muted">Tổng cộng {{ total_count }} đơn hàng trong hệ thống</small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard:delivery_calendar' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-calendar3 me-1"></i> Lịch Giao Hoa
+        </a>
+        <a href="{% url 'dashboard:export_orders_csv' %}" class="btn btn-sm btn-flora-outline">
+            <i class="bi bi-download me-1"></i> Xuất CSV Excel
+        </a>
+    </div>
+</div>
+
+<!-- Bộ lọc tìm kiếm -->
+<div class="card p-3 border-0 shadow-sm rounded-4 mb-4 bg-white">
+    <form action="{% url 'dashboard:order_list' %}" method="GET" class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <input type="text" name="q" class="form-control form-control-sm" placeholder="Tìm theo mã đơn, tên, SĐT..." value="{{ current_q }}">
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">-- Tất cả trạng thái đơn --</option>
+                {% for s_val, s_name in statuses %}
+                    <option value="{{ s_val }}" {% if current_status == s_val %}selected{% endif %}>{{ s_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="payment_status" class="form-select form-select-sm">
+                <option value="">-- Thanh toán --</option>
+                {% for ps_val, ps_name in payment_statuses %}
+                    <option value="{{ ps_val }}" {% if current_payment_status == ps_val %}selected{% endif %}>{{ ps_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="delivery_date" class="form-control form-control-sm" value="{{ current_delivery_date }}" title="Lọc theo ngày giao">
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-sm btn-flora w-100">Lọc</button>
+        </div>
+    </form>
+</div>
+
+<!-- Bảng đơn hàng -->
+<div class="dash-card">
+    <div class="table-responsive">
+        <table class="table dash-table mb-0">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Thời điểm đặt</th>
+                    <th>Người đặt</th>
+                    <th>Người nhận & Lịch giao</th>
+                    <th>Trạng thái đơn</th>
+                    <th>Thanh toán</th>
+                    <th>Tổng tiền</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in page_obj %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'dashboard:order_detail' pk=o.pk %}" class="fw-bold text-success text-decoration-none">
+                                #{{ o.order_number }}
+                            </a>
+                            <small class="text-muted d-block">{{ o.total_items_count }} món hoa</small>
+                        </td>
+                        <td class="text-muted fs-7">{{ o.created_at|date("d/m/Y H:i") }}</td>
+                        <td>
+                            <strong class="text-dark">{{ o.sender_name }}</strong>
+                            <small class="text-muted d-block">{{ o.sender_phone }}</small>
+                        </td>
+                        <td>
+                            <div>{{ o.recipient_name }}</div>
+                            <small class="text-muted">{{ o.delivery_date|date("d/m/Y") }} ({{ o.delivery_time_slot }})</small>
+                        </td>
+                        <td>{{ o.status|order_status_badge }}</td>
+                        <td>{{ o.payment_status|payment_status_badge }}</td>
+                        <td class="fw-bold text-success">{{ o.total_amount|currency }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'dashboard:order_detail' pk=o.pk %}" class="btn btn-sm btn-flora-outline">
+                                Chi tiết & Xử lý
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            Không tìm thấy đơn hàng nào khớp với tiêu chí lọc.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Phân trang -->
+{% if page_obj.has_other_pages %}
+    <nav class="mt-4 d-flex justify-content-center">
+        <ul class="pagination pagination-sm">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?{% query_transform page=page_obj.previous_page_number %}">Trước</a></li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?{% query_transform page=num %}">{{ num }}</a>
+                </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?{% query_transform page=page_obj.next_page_number %}">Sau</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}
