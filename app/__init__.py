@@ -9,6 +9,13 @@ from app.models.core import ShopSetting
 from app.models.catalog import Category
 from app.services.cart import get_current_cart
 
+# Compatibility shims for Flask Request to support Django-style request.GET and request.POST
+from flask import Request as FlaskRequest
+if not hasattr(FlaskRequest, 'GET'):
+    FlaskRequest.GET = property(lambda self: self.args, lambda self, val: None)
+if not hasattr(FlaskRequest, 'POST'):
+    FlaskRequest.POST = property(lambda self: self.form, lambda self, val: None)
+
 def create_app(config_name=None):
     if config_name is None:
         config_name = os.environ.get('FLASK_CONFIG', 'development')
@@ -186,6 +193,7 @@ def create_app(config_name=None):
     from app.blueprints.reviews import bp as reviews_bp
     from app.blueprints.dashboard import bp as dashboard_bp
     from app.blueprints.api import bp as api_bp
+    from app.ai import ai_bp, ai_cli
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
@@ -195,6 +203,10 @@ def create_app(config_name=None):
     app.register_blueprint(reviews_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(ai_bp)
+
+    # Register AI CLI commands
+    app.cli.add_command(ai_cli)
 
     # Exclude REST API from CSRF protection for programmatic access
     csrf.exempt(api_bp)

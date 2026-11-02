@@ -44,7 +44,7 @@
                 <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'catalog:home' %}">
                     Trang chủ
                 </a>
-                <a class="nav-link {% if request.resolver_match.url_name == 'product_list' and not request.GET.category and not request.GET.occasion %}active{% endif %}" href="{% url 'catalog:product_list' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'product_list' and not request.args.get('category') and not request.args.get('occasion') %}active{% endif %}" href="{% url 'catalog:product_list' %}">
                     Tất cả sản phẩm
                 </a>
 
@@ -84,11 +84,14 @@
 
                 <a class="nav-link" href="{% url 'content:about' %}">Giới thiệu</a>
                 <a class="nav-link" href="{% url 'content:contact' %}">Liên hệ</a>
+                <a class="nav-link text-success fw-bold d-flex align-items-center gap-1" href="{{ url_for('ai.assistant') }}" title="Trợ lý tư vấn hoa thông minh">
+                    <i class="bi bi-stars text-warning"></i> Trợ lý AI
+                </a>
 
                 <!-- Thanh tìm kiếm nhỏ gọn đặt cạnh Liên hệ trên cùng thanh điều hướng -->
                 <form action="{% url 'catalog:product_list' %}" method="GET" class="nav-search-form ms-2 d-none d-lg-block">
                     <div class="nav-search-wrapper">
-                        <input type="text" name="q" class="nav-search-input" placeholder="Tìm hoa tươi..." value="{{ request.GET.q|default('') }}" autocomplete="off" aria-label="Tìm kiếm">
+                        <input type="text" name="q" class="nav-search-input" placeholder="Tìm hoa tươi..." value="{{ request.args.get('q', '') }}" autocomplete="off" aria-label="Tìm kiếm">
                         <button type="submit" class="nav-search-btn" title="Tìm kiếm">
                             <i class="bi bi-search"></i>
                         </button>

@@ -100,7 +100,7 @@
                     <!-- Tồn kho -->
                     <div class="mb-4">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="inStockCheck" {% if request.GET.in_stock == '1' %}checked{% endif %} onchange="this.form.submit()">
+                            <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="inStockCheck" {% if request.args.get('in_stock') == '1' %}checked{% endif %} onchange="this.form.submit()">
                             <label class="form-check-label fs-7 fw-semibold" for="inStockCheck">Chỉ xem mẫu còn hàng</label>
                         </div>
                     </div>

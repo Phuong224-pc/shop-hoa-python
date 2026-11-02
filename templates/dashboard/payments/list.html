@@ -92,16 +92,18 @@
                         </td>
                         <td class="text-end">
                             {% if p.status == 'WAITING_VERIFICATION' %}
-                                <form action="{% url 'dashboard:payment_verify' pk=p.pk %}" method="POST" class="d-inline">
+                                <form action="{{ url_for('dashboard.payment_verify', id=p.id) }}" method="POST" class="d-inline">
                                     {% csrf_token %}
+                                    <input type="hidden" name="payment_id" value="{{ p.id }}">
                                     <input type="hidden" name="action" value="approve">
                                     <button type="submit" class="btn btn-sm btn-success me-1">
                                         <i class="bi bi-check-lg"></i> Duyệt
                                     </button>
                                 </form>
                             {% elif p.status == 'UNPAID' and p.payment_method == 'COD' %}
-                                <form action="{% url 'dashboard:payment_verify' pk=p.pk %}" method="POST" class="d-inline">
+                                <form action="{{ url_for('dashboard.payment_verify', id=p.id) }}" method="POST" class="d-inline">
                                     {% csrf_token %}
+                                    <input type="hidden" name="payment_id" value="{{ p.id }}">
                                     <input type="hidden" name="action" value="cod_confirm">
                                     <button type="submit" class="btn btn-sm btn-outline-success">
                                         Thu COD

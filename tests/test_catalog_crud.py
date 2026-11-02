@@ -92,11 +92,13 @@ class CatalogCRUDTestCase(unittest.TestCase):
 
     def test_safe_deletion_and_soft_delete(self):
         cat = Category.query.first()
-        test_sku = "SOFTDEL-TEST-01"
+        import time
+        ts = int(time.time() * 1000)
+        test_sku = f"SOFTDEL-TEST-{ts}"
 
         prod = Product(
             name='Hoa Test Soft Delete',
-            slug='hoa-test-soft-delete',
+            slug=f'hoa-test-soft-delete-{ts}',
             sku=test_sku,
             primary_category_id=cat.id,
             short_description='Mô tả',

@@ -36,9 +36,12 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-md-5">
                         <label class="form-label fs-7 fw-semibold">Chuyển sang bước tiếp theo:</label>
-                        <select name="status" class="form-select form-select-sm">
+                        <select name="status" class="form-select form-select-sm" required>
+                            <option value="" disabled selected>-- Chọn bước tiếp theo --</option>
                             {% for s_val, s_name in statuses %}
-                                <option value="{{ s_val }}" {% if order.status == s_val %}selected{% endif %}>{{ s_name }}</option>
+                                <option value="{{ s_val }}" {% if order.status == s_val %}class="text-muted" disabled{% endif %}>
+                                    {{ s_name }}{% if order.status == s_val %} (Đang ở bước này){% endif %}
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -199,7 +202,7 @@
                     {% if payment.status != 'PAID' %}
                         {% if payment.payment_method == 'BANK_TRANSFER' %}
                             <div class="d-flex gap-2">
-                                <form action="{% url 'dashboard:payment_verify' pk=payment.pk %}" method="POST" class="flex-grow-1">
+                                <form action="{{ url_for('dashboard.payment_verify', id=payment.id) }}" method="POST" class="flex-grow-1">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="approve">
                                     <button type="submit" class="btn btn-sm btn-success w-100">
@@ -211,7 +214,7 @@
                                 </button>
                             </div>
                         {% elif payment.payment_method == 'COD' %}
-                            <form action="{% url 'dashboard:payment_verify' pk=payment.pk %}" method="POST">
+                            <form action="{{ url_for('dashboard.payment_verify', id=payment.id) }}" method="POST">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="cod_confirm">
                                 <button type="submit" class="btn btn-sm btn-success w-100">
@@ -239,7 +242,7 @@
                 <h5 class="modal-title font-serif text-danger">Từ Chối Chứng Từ Thanh Toán</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{% url 'dashboard:payment_verify' pk=payment.pk %}" method="POST">
+            <form action="{{ url_for('dashboard.payment_verify', id=payment.id) }}" method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="reject">
                 <div class="modal-body p-4">

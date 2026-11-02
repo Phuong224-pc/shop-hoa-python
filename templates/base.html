@@ -53,5 +53,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/main.js' %}"></script>
     {% block extra_js %}{% endblock %}
+
+    <!-- Floating AI Assistant Button -->
+    <a href="{{ url_for('ai.assistant') }}" class="position-fixed bottom-0 end-0 m-4 rounded-circle shadow-lg d-flex align-items-center justify-content-center text-decoration-none" style="width: 58px; height: 58px; background: linear-gradient(135deg, #234D3C 0%, #162C23 100%); color: #FFF; z-index: 1050; border: 2px solid #C59B27;" title="Trợ lý tư vấn chọn hoa tươi">
+        <i class="bi bi-stars fs-4 text-warning"></i>
+    </a>
+    
 </body>
 </html>

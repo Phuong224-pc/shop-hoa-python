@@ -8,7 +8,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="font-serif fw-bold mb-1">Khách Hàng Đã Đăng Ký</h4>
-        <small class="text-muted">Tổng cộng {{ total_count }} khách hàng trong hệ thống</small>
+        <small class="text-muted">Tổng cộng <strong>{{ total_count|default(customers|length) }}</strong> khách hàng trong hệ thống</small>
     </div>
 </div>
 
@@ -41,7 +41,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for c in page_obj %}
+                {% for c in customers or page_obj %}
                     <tr>
                         <td>
                             <strong class="text-dark">{{ c.first_name|default(c.username) }}</strong>

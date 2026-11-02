@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load static core_tags %}
+
+{% block title %}Trợ Lý Hoa Tươi AI - {{ shop_setting.shop_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #FFFFFF;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 75vh;
+}
+.chat-header {
+    background: linear-gradient(135deg, #1B3C2E 0%, #2A5A46 100%);
+    color: #FFF;
+    padding: 20px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 24px;
+    background-color: #F8FAFC;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.msg-bubble {
+    max-width: 82%;
+    padding: 14px 18px;
+    border-radius: 16px;
+    font-size: 14.5px;
+    line-height: 1.6;
+    word-break: break-word;
+}
+.msg-user {
+    align-self: flex-end;
+    background: #234D3C;
+    color: #FFFFFF;
+    border-bottom-right-radius: 4px;
+}
+.msg-assistant {
+    align-self: flex-start;
+    background: #FFFFFF;
+    color: #1E293B;
+    border: 1px solid #E2E8F0;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.quick-pill {
+    background: #EBF3EF;
+    color: #1B3C2E;
+    border: 1px solid #D1E5DC;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+.quick-pill:hover {
+    background: #234D3C;
+    color: #FFF;
+}
+.citation-badge {
+    background-color: #E0E7FF;
+    color: #3730A3;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+    text-decoration: none;
+    margin-left: 2px;
+}
+.citation-badge:hover {
+    background-color: #4F46E5;
+    color: #FFF;
+}
+.product-card-mini {
+    background: #FFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    margin-top: 8px;
+}
+.product-card-mini:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    color: inherit;
+}
+.product-card-mini img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="chat-container">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-white text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 22px;">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div>
+                    <h5 class="mb-0 fw-bold font-serif">Flora AI Assistant</h5>
+                    <small class="text-white-50">Tư vấn chọn hoa, ngân sách & giải đáp chính sách cửa hàng</small>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <form action="{{ url_for('ai.clear_history') }}" method="POST" class="d-inline" id="clearChatForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-light py-1 px-3 rounded-pill" title="Xóa lịch sử trò chuyện">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Chat messages area -->
+        <div class="chat-messages" id="chatMessages">
+            <!-- Welcome message -->
+            <div class="msg-bubble msg-assistant">
+                <div class="d-flex align-items-center gap-2 mb-1 text-success fw-bold fs-7">
+                    <i class="bi bi-flower1"></i> Flora Florist AI
+                </div>
+                <div>
+                    Xin chào Quý khách! Em là trợ lý thông minh của <strong>Flora Flower Boutique</strong>. 
+                    Em có thể giúp Quý khách:
+                    <ul class="mb-2 ps-3 mt-1">
+                        <li>Gợi ý hoa theo dịp: sinh nhật, kỷ niệm, khai trương, tỏ tình, chia buồn...</li>
+                        <li>Lọc hoa theo ngân sách (ví dụ: <em>dưới 500 nghìn</em>, <em>dưới 1 triệu</em>...)</li>
+                        <li>Giải đáp chính sách giao hỏa tốc 2 giờ, đổi trả 1-đổi-1, thanh toán VietQR</li>
+                        <li>Hướng dẫn cách cắm và chăm sóc hoa tươi lâu 5-7 ngày</li>
+                    </ul>
+                    Quý khách có thể bấm chọn gợi ý bên dưới hoặc gõ câu hỏi ạ!
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <a href="javascript:void(0)" class="quick-pill" onclick="sendQuickPrompt('Hoa sinh nhật tặng mẹ tông màu nhẹ nhàng dưới 500k')">🌸 Hoa sinh nhật tặng mẹ dưới 500k</a>
+                    <a href="javascript:void(0)" class="quick-pill" onclick="sendQuickPrompt('Chính sách giao hoa hỏa tốc và phí ship')">🚚 Chính sách giao hỏa tốc</a>
+                    <a href="javascript:void(0)" class="quick-pill" onclick="sendQuickPrompt('Hoa khai trương mang ý nghĩa hồng phát')">🎉 Hoa mừng khai trương</a>
+                    <a href="javascript:void(0)" class="quick-pill" onclick="sendQuickPrompt('Cách giữ hoa cắm bình tươi lâu')">💧 Mẹo giữ hoa tươi lâu</a>
+                </div>
+            </div>
+
+            <!-- Existing history from session -->
+            {% for turn in history %}
+                {% if turn.role == 'user' %}
+                    <div class="msg-bubble msg-user">
+                        {{ turn.content }}
+                    </div>
+                {% else %}
+                    <div class="msg-bubble msg-assistant">
+                        <div class="d-flex align-items-center gap-2 mb-1 text-success fw-bold fs-7">
+                            <i class="bi bi-flower1"></i> Flora Florist AI
+                        </div>
+                        <div style="white-space: pre-line;">{{ turn.content }}</div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Input Box -->
+        <div class="p-3 bg-white border-top">
+            <form id="chatForm" class="d-flex gap-2 align-items-center">
+                <input type="text" id="userInput" class="form-control rounded-pill px-4 py-2 border" placeholder="Hỏi bất kỳ điều gì: mẫu hoa, ngân sách, cách chăm sóc..." autocomplete="off" required>
+                <button type="submit" id="sendBtn" class="btn btn-flora rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; flex-shrink: 0;" title="Gửi câu hỏi">
+                    <i class="bi bi-send-fill text-white"></i>
+                </button>
+            </form>
+            <div class="d-flex justify-content-between align-items-center mt-2 px-2 text-muted fs-8">
+                <span><i class="bi bi-shield-check text-success me-1"></i> Thông tin được xác thực từ dữ liệu cửa hàng Flora Flower</span>
+                <span>Powered by Google Gemini</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chatMessages = document.getElementById('chatMessages');
+const chatForm = document.getElementById('chatForm');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+
+function scrollToBottom() {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+scrollToBottom();
+
+function sendQuickPrompt(text) {
+    userInput.value = text;
+    chatForm.dispatchEvent(new Event('submit'));
+}
+
+chatForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const query = userInput.value.trim();
+    if (!query) return;
+
+    // 1. Append user message bubble
+    const userBubble = document.createElement('div');
+    userBubble.className = 'msg-bubble msg-user';
+    userBubble.textContent = query;
+    chatMessages.appendChild(userBubble);
+    userInput.value = '';
+    userInput.disabled = true;
+    sendBtn.disabled = true;
+    scrollToBottom();
+
+    // 2. Prepare Assistant Bubble for streaming
+    const aiBubble = document.createElement('div');
+    aiBubble.className = 'msg-bubble msg-assistant';
+    aiBubble.innerHTML = `
+        <div class="d-flex align-items-center gap-2 mb-1 text-success fw-bold fs-7">
+            <i class="bi bi-flower1"></i> Flora Florist AI
+        </div>
+        <div class="ai-text-content" style="white-space: pre-line;"><span class="spinner-border spinner-border-sm text-success me-2"></span> Đang suy nghĩ và tra cứu dữ liệu...</div>
+        <div class="ai-citations mt-2 d-none"></div>
+        <div class="ai-products mt-2 d-none"></div>
+    `;
+    chatMessages.appendChild(aiBubble);
+    scrollToBottom();
+
+    const textContentEl = aiBubble.querySelector('.ai-text-content');
+    const citationsEl = aiBubble.querySelector('.ai-citations');
+    const productsEl = aiBubble.querySelector('.ai-products');
+
+    // 3. Connect to Server-Sent Events (SSE) streaming endpoint
+    let streamText = '';
+    const eventSource = new EventSource(`/ai/assistant/stream?query=${encodeURIComponent(query)}`);
+
+    eventSource.onmessage = function(event) {
+        if (event.data === '[DONE]') {
+            eventSource.close();
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            userInput.focus();
+            scrollToBottom();
+            return;
+        }
+
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'text') {
+                if (!streamText) {
+                    textContentEl.textContent = '';
+                }
+                streamText += data.content;
+                textContentEl.textContent = streamText;
+                scrollToBottom();
+            } else if (data.type === 'meta') {
+                // Render Citations
+                if (data.citations && data.citations.length > 0) {
+                    citationsEl.classList.remove('d-none');
+                    let citHtml = '<div class="fs-8 text-muted fw-semibold mb-1"><i class="bi bi-bookmark-check me-1"></i> Nguồn tham khảo xác nhận:</div><div class="d-flex flex-wrap gap-1">';
+                    data.citations.forEach(c => {
+                        let linkUrl = c.source === 'product' ? `/products/${c.product_id}` : `/ai/docs/${c.ref_id}`;
+                        citHtml += `<a href="${linkUrl}" target="_blank" class="citation-badge" title="${c.title}">[${c.index}] ${c.title.slice(0, 28)}...</a>`;
+                    });
+                    citHtml += '</div>';
+                    citationsEl.innerHTML = citHtml;
+                }
+
+                // Render Recommended Product Cards
+                if (data.products && data.products.length > 0) {
+                    productsEl.classList.remove('d-none');
+                    let prodHtml = '<div class="fs-7 fw-bold text-dark mt-3 mb-1"><i class="bi bi-bag-heart text-danger me-1"></i> Mẫu hoa phù hợp đề xuất:</div>';
+                    data.products.forEach(p => {
+                        prodHtml += `
+                            <a href="/products/${p.slug || p.id}" class="product-card-mini">
+                                <img src="${p.image}" alt="${p.name}">
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold fs-7 text-dark">${p.name}</div>
+                                    <div class="text-success fw-bold fs-7">${Number(p.price).toLocaleString('vi-VN')} đ</div>
+                                </div>
+                                <span class="badge ${p.in_stock ? 'bg-success-subtle text-success' : 'bg-secondary'} fs-8">
+                                    ${p.in_stock ? 'Còn hàng' : 'Hết hàng'}
+                                </span>
+                            </a>
+                        `;
+                    });
+                    productsEl.innerHTML = prodHtml;
+                }
+                scrollToBottom();
+            } else if (data.type === 'error') {
+                textContentEl.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> ${data.message}</span>`;
+                eventSource.close();
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+            }
+        } catch(err) {
+            console.error('SSE parse error:', err);
+        }
+    };
+
+    eventSource.onerror = function() {
+        eventSource.close();
+        if (!streamText) {
+            textContentEl.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> Đã xảy ra lỗi khi kết nối AI. Vui lòng thử lại.</span>`;
+        }
+        userInput.disabled = false;
+        sendBtn.disabled = false;
+    };
+});
+</script>
+{% endblock %}
+

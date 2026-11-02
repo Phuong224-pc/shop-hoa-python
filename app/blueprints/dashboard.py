@@ -312,6 +312,12 @@ def product_create():
         AuditLog.log(current_user, 'CREATE', 'Product', product.id, product.name, f"Tạo mẫu hoa mới SKU={product.sku}")
         db.session.commit()
 
+        try:
+            from app.ai.rag import index_single_product
+            index_single_product(product.id)
+        except Exception:
+            pass
+
         flash(f'Mẫu hoa "{product.name}" đã được tạo thành công!', 'success')
         return redirect(url_for('dashboard.product_list'))
 
@@ -366,6 +372,12 @@ def product_edit(id):
         AuditLog.log(current_user, 'UPDATE', 'Product', product.id, product.name, f"Cập nhật thông tin mẫu hoa #{product.id}")
         db.session.commit()
 
+        try:
+            from app.ai.rag import index_single_product
+            index_single_product(product.id)
+        except Exception:
+            pass
+
         flash(f'Cập nhật mẫu hoa "{product.name}" thành công!', 'success')
         return redirect(url_for('dashboard.product_list'))
 
@@ -413,6 +425,12 @@ def product_delete(id):
         db.session.commit()
         flash(f'Đã xóa hoàn toàn mẫu hoa "{name}" khỏi hệ thống.', 'success')
 
+    try:
+        from app.ai.rag import delete_product_index
+        delete_product_index(id)
+    except Exception:
+        pass
+
     return redirect(url_for('dashboard.product_list'))
 
 
@@ -427,6 +445,12 @@ def product_toggle_status(id):
         AuditLog.log(current_user, 'UPDATE', 'Product', product.id, product.name, f"Đổi trạng thái sản phẩm từ {old_status} sang {new_status}")
         db.session.commit()
         flash(f'Đã cập nhật trạng thái mẫu hoa "{product.name}" sang {new_status}.', 'success')
+    try:
+        from app.ai.rag import delete_product_index
+        delete_product_index(id)
+    except Exception:
+        pass
+
     return redirect(url_for('dashboard.product_list'))
 
 
@@ -800,8 +824,10 @@ def payment_verify(id):
         tx.status = 'PAID'
         tx.verified_at = datetime.utcnow()
         tx.verified_by_id = current_user.id
-        if tx.order and tx.order.status in ['PENDING', 'CONFIRMED']:
-            tx.order.status = 'CONFIRMED'
+        if tx.order:
+            tx.order.payment_status = 'PAID'
+            if tx.order.status in ['PENDING', 'CONFIRMED']:
+                tx.order.status = 'CONFIRMED'
         AuditLog.log(current_user, 'UPDATE', 'Payment', tx.id, tx.transaction_code, "Xác nhận đối soát thanh toán thành công (PAID).")
         flash(f'Đã xác nhận thanh toán đơn hàng #{tx.order.order_number if tx.order else tx.id} thành công.', 'success')
     elif action == 'reject':
@@ -811,7 +837,7 @@ def payment_verify(id):
         flash('Đã từ chối giao dịch thanh toán.', 'warning')
 
     db.session.commit()
-    return redirect(url_for('dashboard.payment_list'))
+    return redirect(request.referrer or url_for('dashboard.payment_list'))
 
 
 @bp.route('/payments/<int:id>/proof')
@@ -891,7 +917,7 @@ def customer_list():
     page = request.args.get('page', 1, type=int)
     q = request.args.get('q', '').strip()
 
-    query = User.query.filter_by(is_staff=False, is_superuser=False)
+    query = User.query.filter((User.is_superuser == False) | (User.is_superuser.is_(None)))
     if q:
         query = query.filter(
             (User.username.ilike(f"%{q}%")) |

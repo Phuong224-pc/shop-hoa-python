@@ -12,6 +12,7 @@ from app.models.promotion import Coupon, CouponUsage
 from app.models.review import ProductReview
 from app.models.content import Banner, ContactMessage, FAQ, PageContent
 from app.models.core import ShopSetting, AuditLog
+from app.models.ai import AiChunk
 
 __all__ = [
     'User', 'UserProfile', 'Address', 'Wishlist',
@@ -25,6 +26,7 @@ __all__ = [
     'Coupon', 'CouponUsage',
     'ProductReview',
     'Banner', 'ContactMessage', 'FAQ', 'PageContent',
-    'ShopSetting', 'AuditLog'
+    'ShopSetting', 'AuditLog',
+    'AiChunk'
 ]
 

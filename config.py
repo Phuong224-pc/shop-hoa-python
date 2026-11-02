@@ -52,12 +52,21 @@ class Config:
     # Pagination
     ITEMS_PER_PAGE = 12
 
+    # AI & Gemini Configuration
+    AI_MODE = os.environ.get('AI_MODE', 'gemini').lower()  # gemini, demo, mock
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+    GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.5-flash-lite')
+    GEMINI_EMBED_MODEL = os.environ.get('GEMINI_EMBED_MODEL', 'gemini-embedding-001')
+    AI_REQUEST_TIMEOUT = int(os.environ.get('AI_REQUEST_TIMEOUT', 30))
+    AI_RATE_LIMIT_PER_MINUTE = int(os.environ.get('AI_RATE_LIMIT_PER_MINUTE', 20))
+
 class DevelopmentConfig(Config):
     DEBUG = True
 
 class TestingConfig(Config):
     TESTING = True
     DEBUG = True
+    AI_MODE = 'mock'
     WTF_CSRF_ENABLED = False
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'TEST_DATABASE_URL',

@@ -49,7 +49,7 @@ Hệ thống phục vụ 4 nhóm người dùng thông qua cơ chế phân quy�
   * **CLO3 (10%):** Lập trình mạng với REST API trả về JSON chuẩn hóa (`/api/v1/...`) và script client tự động gọi HTTP bằng thư viện `requests`/`urllib`.
   * **CLO4 (20%):** Vận dụng thành thạo hệ sinh thái thư viện Python: Flask, Flask-WTF, WTForms, Flask-SQLAlchemy, Flask-Login, Flask-Mail, python-dotenv, Pillow.
   * **CLO5 (10%):** Tổ chức mã nguồn theo mô hình kiến trúc lớn (Large Application Structure), code module hóa rõ ràng, dễ bảo trì.
-  * **CLO6 (10%):** Kèm theo bộ kiểm thử tự động 14 test cases (`run_tests.py`), kịch bản demo minh chứng và tài liệu hướng dẫn triển khai.
+  * **CLO6 (10%):** Kèm theo bộ kiểm thử tự động 23 test cases (`run_tests.py`), kịch bản demo minh chứng và tài liệu hướng dẫn triển khai.
 * **Phạm vi hệ thống:** Tập trung vào chu trình khép kín của cửa hàng hoa tươi: Chọn hoa -> Tùy biến phụ kiện -> Đặt lịch giao -> Thanh toán VietQR/COD -> Thông báo Email -> Duyệt đối soát -> Cắm hoa & Giao nhận -> Đánh giá phản hồi.
 
 ### 1.4. Công nghệ và thư viện thực tế sử dụng
@@ -356,6 +356,29 @@ return jsonify({
 })
 ```
 
+### 3.7. Tích hợp Trợ lý AI Thông minh & Kỹ thuật RAG (Google Gemini API)
+
+Hệ thống ứng dụng kỹ thuật **RAG (Retrieval-Augmented Generation)** tiên tiến cùng SDK chính thức `google-genai` để xây dựng trợ lý AI chuyên biệt cho ngành hoa tươi:
+1. **Kiến trúc module AI (`app/ai/`):**
+   * [`app/ai/chunking.py`](file:///d:/shophoa-python/app/ai/chunking.py): Phân đoạn tài liệu Markdown theo heading và Sliding Window (kích thước cửa sổ 800 ký tự, trượt gối đầu 150 ký tự).
+   * [`app/ai/keywords.py`](file:///d:/shophoa-python/app/ai/keywords.py): Tách từ tiếng Việt, lọc stopwords, trích xuất bigrams và chấm điểm BM25.
+   * [`app/ai/embeddings.py`](file:///d:/shophoa-python/app/ai/embeddings.py): Tạo vector đặc trưng với model `gemini-embedding-001`, chuẩn hóa vector về độ dài $L_2 = 1.0$.
+   * [`app/ai/vectorstore.py`](file:///d:/shophoa-python/app/ai/vectorstore.py): Lưu trữ và tìm kiếm vector trên bảng SQLite `ai_chunk`, tính toán độ tương đồng Cosine kết hợp BM25 theo công thức Hybrid Search:
+     $$\text{Score} = \alpha \cdot \text{Score}_{\text{semantic}} + (1 - \alpha) \cdot \text{Score}_{\text{keyword}}$$
+   * [`app/ai/guard.py`](file:///d:/shophoa-python/app/ai/guard.py): Phát hiện và ngăn chặn tấn công Prompt Injection, Rate Limiter bộ nhớ trượt 20 requests/phút/IP.
+   * [`app/ai/llm.py`](file:///d:/shophoa-python/app/ai/llm.py): Gọi mô hình `gemini-3.5-flash-lite`, hỗ trợ streaming dữ liệu SSE theo thời gian thực.
+   * [`app/ai/rag.py`](file:///d:/shophoa-python/app/ai/rag.py): Lọc điều kiện ngân sách trước (Pre-filtering), xây dựng ngữ cảnh kèm trích dẫn số `[1]`, `[2]` và trích xuất thẻ sản phẩm trực quan.
+   * [`app/ai/writing.py`](file:///d:/shophoa-python/app/ai/writing.py): Bộ công cụ AI hỗ trợ Quản trị viên: Tóm tắt mô tả, Gợi ý hashtags SEO, Viết lại phong cách Boutique Pháp - Hàn, Dịch thuật mô tả sang tiếng Anh.
+2. **Giao diện & Điểm cuối:**
+   * `/ai/assistant`: Trang tư vấn hoa thông minh cho khách hàng, hỗ trợ Streaming SSE `/ai/assistant/stream`, kèm trích dẫn nguồn xác thực và thẻ sản phẩm đề xuất.
+   * `/ai/search`: Tìm kiếm thông minh bằng câu tự nhiên (kết hợp vector cosine & BM25 keyword).
+   * `/ai/post-tool/...`: 4 API công cụ AI dành riêng cho Admin trong form thêm/sửa sản phẩm.
+3. **Bộ lệnh quản trị dòng lệnh (Flask CLI):**
+   * `flask ai index-docs`: Đánh chỉ mục 9 tài liệu chính sách cửa hàng (Markdown).
+   * `flask ai index-products [--rebuild]`: Tự động sinh vector cho toàn bộ sản phẩm hoa tươi đang bán.
+   * `flask ai stats`: Xem thống kê số lượng vector chunks hiện có.
+   * `flask ai ask "<câu hỏi>" [--stream]`: Thử nghiệm tương tác với Trợ lý AI trực tiếp từ terminal.
+
 ---
 
 ## 4. KẾT QUẢ VÀ KIỂM THỬ
@@ -406,7 +429,7 @@ Bộ kiểm thử được viết bằng module `unittest` tại thư mục [`te
 
 ```powershell
 # Kết quả thực tế khi thực thi lệnh python run_tests.py:
-Ran 14 tests in 2.402s
+Ran 23 tests in 2.524s
 OK
 ```
 

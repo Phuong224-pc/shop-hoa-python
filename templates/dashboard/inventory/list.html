@@ -46,7 +46,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for v in page_obj %}
+                {% for v in variants or page_obj %}
                     <tr>
                         <td>
                             <strong class="d-block text-dark">{{ v.product.name }}</strong>
@@ -88,7 +88,7 @@
                                     <h5 class="modal-title font-serif">Nhập Thêm Hoa Vào Kho</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
-                                <form action="{% url 'dashboard:inventory_import' variant_id=v.id %}" method="POST">
+                                <form action="{{ url_for('dashboard.inventory_import', id=v.id) }}" method="POST">
                                     {% csrf_token %}
                                     <div class="modal-body p-4 text-start">
                                         <div class="mb-2"><strong>Mẫu hoa:</strong> {{ v.product.name }} ({{ v.name }})</div>
@@ -119,7 +119,7 @@
                                     <h5 class="modal-title font-serif text-warning">Kiểm Kê Điều Chỉnh Tồn Kho</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
-                                <form action="{% url 'dashboard:inventory_adjust' variant_id=v.id %}" method="POST">
+                                <form action="{{ url_for('dashboard.inventory_adjust', id=v.id) }}" method="POST">
                                     {% csrf_token %}
                                     <div class="modal-body p-4 text-start">
                                         <div class="mb-2"><strong>Mẫu hoa:</strong> {{ v.product.name }} ({{ v.name }})</div>
