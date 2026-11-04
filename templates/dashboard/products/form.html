@@ -185,14 +185,14 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label fs-7 fw-semibold">Giá bán niêm yết (VNĐ) <span class="text-danger">*</span></label>
-                                {{ form.default_price(class="form-control" + (" is-invalid" if form.default_price.errors else ""), placeholder="650000", value=form.default_price.data if form.default_price.data is not None else 650000) }}
+                                {{ form.default_price(class="form-control" + (" is-invalid" if form.default_price.errors else ""), placeholder="650000") }}
                                 {% if form.default_price.errors %}
                                     <div class="invalid-feedback d-block">{{ form.default_price.errors[0] }}</div>
                                 {% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fs-7 fw-semibold">Số lượng tồn kho ban đầu <span class="text-danger">*</span></label>
-                                {{ form.default_stock(class="form-control" + (" is-invalid" if form.default_stock.errors else ""), placeholder="15", value=form.default_stock.data if form.default_stock.data is not None else 15) }}
+                                {{ form.default_stock(class="form-control" + (" is-invalid" if form.default_stock.errors else ""), placeholder="15") }}
                                 {% if form.default_stock.errors %}
                                     <div class="invalid-feedback d-block">{{ form.default_stock.errors[0] }}</div>
                                 {% endif %}

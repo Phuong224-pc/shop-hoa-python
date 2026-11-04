@@ -236,3 +236,7 @@ def register_filters_and_extensions(app):
     app.jinja_env.filters['stringformat'] = filter_stringformat
     app.jinja_env.filters['truncatechars'] = filter_truncatechars
     app.jinja_env.filters['truncatewords'] = filter_truncatewords
+
+    # Compatibility tests
+    app.jinja_env.tests['None'] = lambda x: x is None
+    app.jinja_env.tests['none'] = lambda x: x is None

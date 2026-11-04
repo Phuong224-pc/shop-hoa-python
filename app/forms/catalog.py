@@ -1,3 +1,4 @@
+from decimal import Decimal
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, TextAreaField, DecimalField, IntegerField, BooleanField, SelectField, SubmitField
@@ -52,7 +53,7 @@ class ProductForm(FlaskForm):
 
     # Variant fields for rapid product creation
     default_variant_name = StringField('Tên phiên bản mặc định', default='Tiêu chuẩn (Standard)', validators=[Optional()])
-    default_price = DecimalField('Giá bán (VNĐ)', validators=[
+    default_price = DecimalField('Giá bán (VNĐ)', default=Decimal('650000.00'), validators=[
         Optional(),
         NumberRange(min=0, message='Giá không được âm')
     ])
@@ -60,7 +61,7 @@ class ProductForm(FlaskForm):
         Optional(),
         NumberRange(min=0, message='Giá ưu đãi không được âm')
     ])
-    default_stock = IntegerField('Số lượng tồn kho ban đầu', default=10, validators=[
+    default_stock = IntegerField('Số lượng tồn kho ban đầu', default=15, validators=[
         Optional(),
         NumberRange(min=0, message='Tồn kho không được âm')
     ])
