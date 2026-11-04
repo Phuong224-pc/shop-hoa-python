@@ -51,9 +51,9 @@ class ProductForm(FlaskForm):
     ])
 
     # Variant fields for rapid product creation
-    default_variant_name = StringField('Tên phiên bản mặc định', default='Tiêu chuẩn (Standard)', validators=[DataRequired()])
+    default_variant_name = StringField('Tên phiên bản mặc định', default='Tiêu chuẩn (Standard)', validators=[Optional()])
     default_price = DecimalField('Giá bán (VNĐ)', validators=[
-        DataRequired(message='Vui lòng nhập giá bán'),
+        Optional(),
         NumberRange(min=0, message='Giá không được âm')
     ])
     default_sale_price = DecimalField('Giá ưu đãi/khuyến mãi (VNĐ)', validators=[
@@ -61,22 +61,31 @@ class ProductForm(FlaskForm):
         NumberRange(min=0, message='Giá ưu đãi không được âm')
     ])
     default_stock = IntegerField('Số lượng tồn kho ban đầu', default=10, validators=[
-        DataRequired(),
+        Optional(),
         NumberRange(min=0, message='Tồn kho không được âm')
     ])
 
     submit = SubmitField('Lưu Mẫu Hoa')
 
-    def __init__(self, original_sku=None, *args, **kwargs):
+    def __init__(self, original_sku=None, is_create=False, *args, **kwargs):
         super(ProductForm, self).__init__(*args, **kwargs)
         self.original_sku = original_sku
+        self.is_create = is_create
 
     def validate_sku(self, field):
-        sku = field.data.strip().upper()
+        sku = (field.data or '').strip().upper()
         if self.original_sku and sku == self.original_sku:
             return
         if Product.query.filter_by(sku=sku).first():
             raise ValidationError('Mã SKU này đã tồn tại trong hệ thống. Vui lòng đặt mã khác.')
+
+    def validate_default_price(self, field):
+        if self.is_create and (field.data is None or field.data < 0):
+            raise ValidationError('Vui lòng nhập giá bán cho biến thể mặc định.')
+
+    def validate_default_stock(self, field):
+        if self.is_create and (field.data is None or field.data < 0):
+            raise ValidationError('Vui lòng nhập số lượng tồn kho ban đầu.')
 
 
 class VariantForm(FlaskForm):

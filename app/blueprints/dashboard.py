@@ -254,27 +254,30 @@ def product_list():
 
 @bp.route('/products/create', methods=['GET', 'POST'])
 def product_create():
-    form = ProductForm()
+    form = ProductForm(is_create=True)
     form.primary_category_id.choices = [(c.id, c.name) for c in Category.query.filter_by(is_active=True).all()]
 
     if form.validate_on_submit():
         import re
         slug = re.sub(r'[^\w\s-]', '', form.name.data.strip().lower())
         slug = re.sub(r'[-\s]+', '-', slug)
+        if not slug:
+            slug = f"flower-{int(datetime.utcnow().timestamp())}"
         # Ensure unique slug
         if Product.query.filter_by(slug=slug).first():
             slug = f"{slug}-{int(datetime.utcnow().timestamp())}"
 
         # Handle image upload
         image_path = ''
-        if form.main_image.data:
+        if form.main_image.data and getattr(form.main_image.data, 'filename', None):
             f = form.main_image.data
             fname = secure_filename(f.filename)
-            upload_dir = current_app.config['MEDIA_FOLDER'] / 'products'
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            saved_name = f"product_{int(datetime.utcnow().timestamp())}_{fname}"
-            f.save(upload_dir / saved_name)
-            image_path = f"products/{saved_name}"
+            if fname:
+                upload_dir = current_app.config['MEDIA_FOLDER'] / 'products'
+                upload_dir.mkdir(parents=True, exist_ok=True)
+                saved_name = f"product_{int(datetime.utcnow().timestamp())}_{fname}"
+                f.save(upload_dir / saved_name)
+                image_path = f"products/{saved_name}"
 
         product = Product(
             name=form.name.data.strip(),
@@ -297,14 +300,17 @@ def product_create():
         db.session.flush()
 
         # Create initial default variant
+        variant_name = (form.default_variant_name.data or 'Tiêu chuẩn (Standard)').strip()
+        variant_price = form.default_price.data if form.default_price.data is not None else Decimal('650000.00')
+        variant_stock = form.default_stock.data if form.default_stock.data is not None else 15
         variant = ProductVariant(
             product_id=product.id,
-            name=form.default_variant_name.data.strip(),
+            name=variant_name,
             size_code='STANDARD',
             sku=f"{product.sku}-STD",
-            price=form.default_price.data,
+            price=variant_price,
             sale_price=form.default_sale_price.data if form.default_sale_price.data else None,
-            stock=form.default_stock.data,
+            stock=variant_stock,
             is_default=True
         )
         db.session.add(variant)
@@ -327,7 +333,7 @@ def product_create():
 @bp.route('/products/<int:id>/edit', methods=['GET', 'POST'])
 def product_edit(id):
     product = Product.query.get_or_404(id)
-    form = ProductForm(original_sku=product.sku, obj=product)
+    form = ProductForm(original_sku=product.sku, is_create=False, obj=product)
     form.primary_category_id.choices = [(c.id, c.name) for c in Category.query.filter_by(is_active=True).all()]
 
     default_v = product.default_variant
@@ -354,20 +360,23 @@ def product_edit(id):
         product.is_featured = form.is_featured.data
         product.is_bestseller_manual = form.is_bestseller_manual.data
 
-        if form.main_image.data:
+        if form.main_image.data and getattr(form.main_image.data, 'filename', None):
             f = form.main_image.data
             fname = secure_filename(f.filename)
-            upload_dir = current_app.config['MEDIA_FOLDER'] / 'products'
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            saved_name = f"product_{int(datetime.utcnow().timestamp())}_{fname}"
-            f.save(upload_dir / saved_name)
-            product.main_image = f"products/{saved_name}"
+            if fname:
+                upload_dir = current_app.config['MEDIA_FOLDER'] / 'products'
+                upload_dir.mkdir(parents=True, exist_ok=True)
+                saved_name = f"product_{int(datetime.utcnow().timestamp())}_{fname}"
+                f.save(upload_dir / saved_name)
+                product.main_image = f"products/{saved_name}"
 
-        if default_v:
-            default_v.name = form.default_variant_name.data.strip()
+        if default_v and form.default_price.data is not None:
+            if form.default_variant_name.data:
+                default_v.name = form.default_variant_name.data.strip()
             default_v.price = form.default_price.data
             default_v.sale_price = form.default_sale_price.data if form.default_sale_price.data else None
-            default_v.stock = form.default_stock.data
+            if form.default_stock.data is not None:
+                default_v.stock = form.default_stock.data
 
         AuditLog.log(current_user, 'UPDATE', 'Product', product.id, product.name, f"Cập nhật thông tin mẫu hoa #{product.id}")
         db.session.commit()
@@ -395,6 +404,83 @@ def product_edit(id):
         title=f'Chỉnh Sửa Mẫu Hoa: {product.name}'
     )
 
+
+
+@bp.route('/products/<int:product_id>/variants/save', methods=['POST'])
+def product_variant_save(product_id):
+    product = Product.query.get_or_404(product_id)
+    name = request.form.get('name', '').strip()
+    size_code = request.form.get('size_code', 'STANDARD').strip()
+    sku = request.form.get('sku', '').strip().upper()
+    price_val = request.form.get('price', '').strip()
+    sale_price_val = request.form.get('sale_price', '').strip()
+    stock_val = request.form.get('stock', '10').strip()
+    is_default = bool(request.form.get('is_default'))
+
+    if not name or not sku or not price_val:
+        flash('Vui lòng điền đầy đủ tên kích thước, SKU và giá niêm yết.', 'danger')
+        return redirect(url_for('dashboard.product_edit', id=product.id))
+
+    try:
+        price = Decimal(price_val)
+        sale_price = Decimal(sale_price_val) if sale_price_val else None
+        stock = int(stock_val)
+    except Exception:
+        flash('Giá hoặc số lượng tồn kho không hợp lệ.', 'danger')
+        return redirect(url_for('dashboard.product_edit', id=product.id))
+
+    if ProductVariant.query.filter_by(sku=sku).first():
+        flash(f'Mã SKU "{sku}" đã tồn tại cho một biến thể khác.', 'danger')
+        return redirect(url_for('dashboard.product_edit', id=product.id))
+
+    if is_default:
+        ProductVariant.query.filter_by(product_id=product.id).update({'is_default': False})
+
+    variant = ProductVariant(
+        product_id=product.id,
+        name=name,
+        size_code=size_code,
+        sku=sku,
+        price=price,
+        sale_price=sale_price,
+        stock=stock,
+        is_default=is_default
+    )
+    db.session.add(variant)
+    db.session.commit()
+
+    AuditLog.log(current_user, 'CREATE', 'ProductVariant', variant.id, variant.sku, f"Thêm biến thể {variant.name} cho mẫu hoa #{product.id}")
+    flash(f'Đã thêm biến thể "{name}" thành công!', 'success')
+    return redirect(url_for('dashboard.product_edit', id=product.id))
+
+
+@bp.route('/products/<int:product_id>/variants/<int:variant_id>/delete', methods=['POST'])
+def product_variant_delete(product_id, variant_id):
+    product = Product.query.get_or_404(product_id)
+    variant = ProductVariant.query.filter_by(id=variant_id, product_id=product.id).first_or_404()
+
+    if product.variants.count() <= 1:
+        flash('Không thể xóa biến thể duy nhất của sản phẩm. Mỗi mẫu hoa cần ít nhất một biến thể.', 'warning')
+        return redirect(url_for('dashboard.product_edit', id=product.id))
+
+    if variant.order_items.first():
+        flash('Biến thể này đã có trong đơn hàng của khách, không thể xóa để bảo toàn lịch sử hóa đơn.', 'danger')
+        return redirect(url_for('dashboard.product_edit', id=product.id))
+
+    name = variant.name
+    sku = variant.sku
+    was_default = variant.is_default
+
+    db.session.delete(variant)
+    if was_default:
+        first_other = product.variants.filter(ProductVariant.id != variant.id).first()
+        if first_other:
+            first_other.is_default = True
+    db.session.commit()
+
+    AuditLog.log(current_user, 'DELETE', 'ProductVariant', variant_id, sku, f"Xóa biến thể {name}")
+    flash(f'Đã xóa biến thể "{name}" ({sku}) thành công.', 'success')
+    return redirect(url_for('dashboard.product_edit', id=product.id))
 
 @bp.route('/products/<int:id>/delete', methods=['POST'])
 def product_delete(id):

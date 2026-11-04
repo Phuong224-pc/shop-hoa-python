@@ -1,130 +1,34 @@
 {% extends 'dashboard/base.html' %}
 {% load static core_tags %}
 
-{% block title %}{{ title }}
-<script>
-function runAiTool(tool) {
-    const descField = document.getElementById('description') || document.querySelector('[name="description"]');
-    const nameField = document.getElementById('name') || document.querySelector('[name="name"]');
-    const text = descField ? descField.value : '';
-    const name = nameField ? nameField.value : '';
-
-    if (!text.trim()) {
-        alert('Vui lòng nhập nội dung mô tả chi tiết trước khi dùng công cụ AI.');
-        return;
-    }
-
-    const spinner = document.getElementById('aiToolSpinner');
-    const outputBox = document.getElementById('aiToolOutputBox');
-    const resultText = document.getElementById('aiToolResultText');
-
-    spinner.classList.remove('d-none');
-    outputBox.classList.add('d-none');
-
-    const csrfToken = document.querySelector('[name="csrf_token"]') ? document.querySelector('[name="csrf_token"]').value : '';
-
-    fetch(`/ai/post-tool/${tool}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify({ text: text, name: name })
-    })
-    .then(r => r.json())
-    .then(data => {
-        spinner.classList.add('d-none');
-        if (data.success) {
-            resultText.textContent = data.result;
-            outputBox.classList.remove('d-none');
-        } else {
-            alert('Lỗi: ' + (data.error || 'Không thể xử lý'));
-        }
-    })
-    .catch(err => {
-        spinner.classList.add('d-none');
-        alert('Lỗi kết nối: ' + err);
-    });
-}
-
-function applyAiToField(fieldName) {
-    const resultText = document.getElementById('aiToolResultText').textContent;
-    const targetEl = document.getElementById(fieldName) || document.querySelector(`[name="${fieldName}"]`);
-    if (targetEl && resultText) {
-        targetEl.value = resultText;
-        document.getElementById('aiToolOutputBox').classList.add('d-none');
-    }
-}
-</script>
-
-{% endblock %}
-{% block page_title %}{{ title }}
-<script>
-function runAiTool(tool) {
-    const descField = document.getElementById('description') || document.querySelector('[name="description"]');
-    const nameField = document.getElementById('name') || document.querySelector('[name="name"]');
-    const text = descField ? descField.value : '';
-    const name = nameField ? nameField.value : '';
-
-    if (!text.trim()) {
-        alert('Vui lòng nhập nội dung mô tả chi tiết trước khi dùng công cụ AI.');
-        return;
-    }
-
-    const spinner = document.getElementById('aiToolSpinner');
-    const outputBox = document.getElementById('aiToolOutputBox');
-    const resultText = document.getElementById('aiToolResultText');
-
-    spinner.classList.remove('d-none');
-    outputBox.classList.add('d-none');
-
-    const csrfToken = document.querySelector('[name="csrf_token"]') ? document.querySelector('[name="csrf_token"]').value : '';
-
-    fetch(`/ai/post-tool/${tool}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify({ text: text, name: name })
-    })
-    .then(r => r.json())
-    .then(data => {
-        spinner.classList.add('d-none');
-        if (data.success) {
-            resultText.textContent = data.result;
-            outputBox.classList.remove('d-none');
-        } else {
-            alert('Lỗi: ' + (data.error || 'Không thể xử lý'));
-        }
-    })
-    .catch(err => {
-        spinner.classList.add('d-none');
-        alert('Lỗi kết nối: ' + err);
-    });
-}
-
-function applyAiToField(fieldName) {
-    const resultText = document.getElementById('aiToolResultText').textContent;
-    const targetEl = document.getElementById(fieldName) || document.querySelector(`[name="${fieldName}"]`);
-    if (targetEl && resultText) {
-        targetEl.value = resultText;
-        document.getElementById('aiToolOutputBox').classList.add('d-none');
-    }
-}
-</script>
-
-{% endblock %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
 
 {% block dashboard_content %}
 <div class="mb-4">
-    <a href="{% url 'dashboard:product_list' %}" class="btn btn-sm btn-outline-secondary">
+    <a href="{{ url_for('dashboard.product_list') }}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách hoa
     </a>
 </div>
 
+{% if form.errors %}
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+        <div class="fw-bold mb-1">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> Không thể lưu thông tin mẫu hoa! Vui lòng kiểm tra lại:
+        </div>
+        <ul class="mb-0 ps-3">
+            {% for field, errors in form.errors.items() %}
+                {% for error in errors %}
+                    <li><strong>{{ form[field].label.text if field in form else field }}:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+{% endif %}
+
 <div class="row g-4">
-    <!-- Form thông tin chính sản phẩm -->
+    <!-- Cột trái: Form thông tin chính sản phẩm -->
     <div class="col-lg-8">
         <div class="dash-card p-4">
             <h5 class="font-serif fw-bold mb-4 pb-2 border-bottom">Thông Tin Mẫu Hoa</h5>
@@ -134,64 +38,68 @@ function applyAiToField(fieldName) {
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-8">
-                        <label class="form-label fw-semibold">Tên mẫu hoa *</label>
-                        {{ form.name }}
+                        <label class="form-label fw-semibold">Tên mẫu hoa <span class="text-danger">*</span></label>
+                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Nhập tên mẫu hoa (ví dụ: Bó Hoa Nắng Sớm Hồng Juliet)") }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors[0] }}</div>
+                        {% endif %}
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold">Mã sản phẩm (SKU) *</label>
-                        {{ form.sku }}
+                        <label class="form-label fw-semibold">Mã sản phẩm (SKU) <span class="text-danger">*</span></label>
+                        {{ form.sku(class="form-control font-monospace" + (" is-invalid" if form.sku.errors else ""), placeholder="FL-BOU-011") }}
+                        {% if form.sku.errors %}
+                            <div class="invalid-feedback d-block">{{ form.sku.errors[0] }}</div>
+                        {% endif %}
                     </div>
                 </div>
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Danh mục báo cáo chính *</label>
-                        {{ form.primary_category }}
+                        <label class="form-label fw-semibold">Danh mục hoa chính <span class="text-danger">*</span></label>
+                        {{ form.primary_category_id(class="form-select" + (" is-invalid" if form.primary_category_id.errors else "")) }}
+                        {% if form.primary_category_id.errors %}
+                            <div class="invalid-feedback d-block">{{ form.primary_category_id.errors[0] }}</div>
+                        {% endif %}
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Kiểu dáng trình bày *</label>
-                        {{ form.presentation_style }}
+                        <label class="form-label fw-semibold">Kiểu dáng trình bày <span class="text-danger">*</span></label>
+                        {{ form.presentation_style(class="form-select") }}
                     </div>
                 </div>
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Tông màu chủ đạo *</label>
-                        {{ form.color_tone }}
+                        <label class="form-label fw-semibold">Tông màu chủ đạo <span class="text-danger">*</span></label>
+                        {{ form.color_tone(class="form-select") }}
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Trạng thái kinh doanh *</label>
-                        {{ form.status }}
-                    </div>
-                </div>
-
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Dịp tặng phù hợp</label>
-                        {{ form.occasions }}
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Loại hoa chính</label>
-                        {{ form.flower_types }}
+                        <label class="form-label fw-semibold">Trạng thái kinh doanh <span class="text-danger">*</span></label>
+                        {{ form.status(class="form-select") }}
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Thành phần hoa & lá phụ *</label>
-                    {{ form.flower_composition }}
+                    <label class="form-label fw-semibold">Thành phần hoa & lá phụ</label>
+                    {{ form.flower_composition(class="form-control", placeholder="Ví dụ: 10 cành hoa hồng Ohara, 5 cành baby trắng, lá bạc...") }}
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Mô tả ngắn gọn *</label>
-                    {{ form.short_description }}
+                    <label class="form-label fw-semibold">Mô tả ngắn gọn <span class="text-danger">*</span></label>
+                    {{ form.short_description(class="form-control" + (" is-invalid" if form.short_description.errors else ""), placeholder="Tóm tắt ngắn gọn 1-2 câu giới thiệu sản phẩm...") }}
+                    {% if form.short_description.errors %}
+                        <div class="invalid-feedback d-block">{{ form.short_description.errors[0] }}</div>
+                    {% endif %}
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Mô tả chi tiết & ý nghĩa hoa *</label>
-                    {{ form.description }}
+                    <label class="form-label fw-semibold">Mô tả chi tiết & ý nghĩa hoa <span class="text-danger">*</span></label>
+                    {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=5, id="description", placeholder="Ý nghĩa chi tiết mẫu hoa và thông điệp gửi gắm...") }}
+                    {% if form.description.errors %}
+                        <div class="invalid-feedback d-block">{{ form.description.errors[0] }}</div>
+                    {% endif %}
                 </div>
 
-                <!-- AI Writing Assistant Toolbar -->
+                <!-- AI Writing Assistant Toolbar (Gemini) -->
                 <div class="card p-3 mb-3 border-0 bg-light rounded-3">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="fs-7 fw-bold text-success d-flex align-items-center gap-1">
@@ -215,7 +123,7 @@ function applyAiToField(fieldName) {
                     </div>
                     <!-- Output preview area -->
                     <div id="aiToolOutputBox" class="p-3 bg-white rounded border fs-7 d-none">
-                        <div class="text-muted fs-8 mb-1 fw-bold">Kết quả AI tạo ra (Nháp):</div>
+                        <div class="text-muted fs-8 mb-1 fw-bold">Kết quả AI tạo ra (Bản nháp):</div>
                         <div id="aiToolResultText" class="mb-2 text-dark font-monospace" style="white-space: pre-wrap;"></div>
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-sm btn-success py-1 px-3 fs-8" onclick="applyAiToField('description')">
@@ -233,50 +141,64 @@ function applyAiToField(fieldName) {
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Hướng dẫn chăm sóc hoa</label>
-                    {{ form.care_instructions }}
+                    {{ form.care_instructions(class="form-control", rows=3, placeholder="Ví dụ: Cắt vát cành 45 độ, thay nước sạch mỗi ngày...") }}
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Ghi chú hoa theo mùa</label>
-                    {{ form.seasonal_policy_notes }}
+                    {{ form.seasonal_policy_notes(class="form-control", rows=2, placeholder="Lưu ý hoa theo mùa / thay thế hoa phụ...") }}
                 </div>
 
                 <div class="row g-3 mb-4">
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Ảnh đại diện chính *</label>
-                        {{ form.main_image }}
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Tải thêm ảnh phụ (Nhiều ảnh)</label>
-                        <input type="file" name="extra_images" multiple class="form-control">
+                    <div class="col-md-12">
+                        <label class="form-label fw-semibold">Ảnh đại diện chính</label>
+                        {{ form.main_image(class="form-control" + (" is-invalid" if form.main_image.errors else "")) }}
+                        {% if form.main_image.errors %}
+                            <div class="invalid-feedback d-block">{{ form.main_image.errors[0] }}</div>
+                        {% endif %}
+                        {% if product and product.main_image %}
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <img src="{{ product.main_image.url }}" class="rounded border p-1" style="width: 50px; height: 50px; object-fit: cover;">
+                                <span class="fs-8 text-muted">Ảnh hiện tại đang sử dụng</span>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
 
                 <div class="mb-4">
                     <div class="form-check form-check-inline">
-                        {{ form.is_featured }}
-                        <label class="form-check-label fw-semibold ms-1" for="{{ form.is_featured.id_for_label }}">Đưa vào Bộ sưu tập nổi bật</label>
+                        {{ form.is_featured(class="form-check-input", id="is_featured") }}
+                        <label class="form-check-label fw-semibold ms-1" for="is_featured">Đưa vào Bộ sưu tập nổi bật</label>
                     </div>
                     <div class="form-check form-check-inline">
-                        {{ form.is_bestseller_manual }}
-                        <label class="form-check-label fw-semibold ms-1" for="{{ form.is_bestseller_manual.id_for_label }}">Ghim vào Bán chạy thủ công</label>
+                        {{ form.is_bestseller_manual(class="form-check-input", id="is_bestseller_manual") }}
+                        <label class="form-check-label fw-semibold ms-1" for="is_bestseller_manual">Ghim vào Bán chạy thủ công</label>
                     </div>
                 </div>
 
                 {% if not product %}
                     <!-- Khi thêm mới: nhập giá và tồn kho cho biến thể đầu tiên -->
                     <div class="p-3 bg-light rounded-3 mb-4 border">
-                        <h6 class="fw-bold mb-2">Giá & Tồn Kho Biến Thể Mặc Định (Size M)</h6>
+                        <h6 class="fw-bold mb-2 text-dark">
+                            <i class="bi bi-tag-fill text-success me-1"></i> Giá & Tồn Kho Biến Thể Mặc Định (Size M - Tiêu Chuẩn)
+                        </h6>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fs-7">Giá bán niêm yết (VNĐ):</label>
-                                <input type="number" name="default_price" class="form-control" value="650000" required>
+                                <label class="form-label fs-7 fw-semibold">Giá bán niêm yết (VNĐ) <span class="text-danger">*</span></label>
+                                {{ form.default_price(class="form-control" + (" is-invalid" if form.default_price.errors else ""), placeholder="650000", value=form.default_price.data if form.default_price.data is not None else 650000) }}
+                                {% if form.default_price.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.default_price.errors[0] }}</div>
+                                {% endif %}
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fs-7">Số lượng tồn kho ban đầu:</label>
-                                <input type="number" name="default_stock" class="form-control" value="15" required>
+                                <label class="form-label fs-7 fw-semibold">Số lượng tồn kho ban đầu <span class="text-danger">*</span></label>
+                                {{ form.default_stock(class="form-control" + (" is-invalid" if form.default_stock.errors else ""), placeholder="15", value=form.default_stock.data if form.default_stock.data is not None else 15) }}
+                                {% if form.default_stock.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.default_stock.errors[0] }}</div>
+                                {% endif %}
                             </div>
                         </div>
+                        <input type="hidden" name="default_variant_name" value="Tiêu chuẩn (Standard)">
                     </div>
                 {% endif %}
 
@@ -304,22 +226,22 @@ function applyAiToField(fieldName) {
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body p-4 text-start">
-                                <p class="mb-2 text-dark">Bạn có chắc chắn muốn xóa vĩnh viễn mẫu hoa sau?</p>
+                                <p class="mb-2 text-dark">Bạn có chắc chắn muốn xóa mẫu hoa sau?</p>
                                 <div class="p-3 bg-light rounded-3 border mb-3">
                                     <div class="fw-bold text-dark fs-6">{{ product.name }}</div>
                                     <div class="text-muted fs-7">Mã SKU: <strong>{{ product.sku }}</strong> | Danh mục: {{ product.primary_category.name }}</div>
                                     <div class="text-muted fs-7">Số biến thể: {{ variants|length }} | Tồn kho: {{ product.total_stock }} sản phẩm</div>
                                 </div>
                                 <div class="alert alert-warning fs-7 mb-0">
-                                    <i class="bi bi-info-circle me-1"></i> <strong>Lưu ý:</strong> Nếu mẫu hoa đang có đơn hàng xử lý hoặc giao hoa, hệ thống sẽ ngăn chặn việc xóa để đảm bảo an toàn đơn hàng.
+                                    <i class="bi bi-info-circle me-1"></i> <strong>Lưu ý:</strong> Nếu mẫu hoa đã có đơn hàng trong quá khứ, hệ thống sẽ tự động thực hiện <strong>Xóa Mềm (ARCHIVED)</strong> để bảo toàn tuyệt đối lịch sử hóa đơn kế toán.
                                 </div>
                             </div>
                             <div class="modal-footer bg-light">
                                 <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                                <form action="{% url 'dashboard:product_delete' pk=product.pk %}" method="POST" class="d-inline">
+                                <form action="{{ url_for('dashboard.product_delete', id=product.id) }}" method="POST" class="d-inline">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-danger px-3">
-                                        <i class="bi bi-trash3 me-1"></i> Xác nhận xóa vĩnh viễn
+                                        <i class="bi bi-trash3 me-1"></i> Xác nhận xóa
                                     </button>
                                 </form>
                             </div>
@@ -330,7 +252,7 @@ function applyAiToField(fieldName) {
         </div>
     </div>
 
-    <!-- Cột Phải: Biến thể kích thước & Thư viện ảnh nếu đang sửa -->
+    <!-- Cột phải: Quản lý biến thể kích thước & Thư viện ảnh (khi sửa) -->
     <div class="col-lg-4">
         {% if product %}
             <!-- Quản lý biến thể kích thước -->
@@ -344,7 +266,7 @@ function applyAiToField(fieldName) {
 
                 <!-- Form Thêm biến thể -->
                 <div class="collapse mb-3" id="addVariantCollapse">
-                    <form action="{% url 'dashboard:product_variant_save' product_id=product.id %}" method="POST" class="p-3 bg-light rounded-3 border">
+                    <form action="{{ url_for('dashboard.product_variant_save', product_id=product.id) }}" method="POST" class="p-3 bg-light rounded-3 border">
                         {% csrf_token %}
                         <div class="mb-2">
                             <label class="form-label fs-7 fw-semibold">Tên kích thước:</label>
@@ -361,18 +283,18 @@ function applyAiToField(fieldName) {
                                 </select>
                             </div>
                             <div class="col-6">
-                                <label class="form-label fs-7">SKU:</label>
-                                <input type="text" name="sku" class="form-control form-control-sm" placeholder="{{ product.sku }}-M" required>
+                                <label class="form-label fs-7">Mã SKU:</label>
+                                <input type="text" name="sku" class="form-control form-control-sm font-monospace" placeholder="{{ product.sku }}-M" required>
                             </div>
                         </div>
                         <div class="row g-2 mb-2">
                             <div class="col-6">
-                                <label class="form-label fs-7">Giá niêm yết:</label>
-                                <input type="number" name="price" class="form-control form-control-sm" required>
+                                <label class="form-label fs-7">Giá bán niêm yết:</label>
+                                <input type="number" name="price" class="form-control form-control-sm" placeholder="650000" required>
                             </div>
                             <div class="col-6">
-                                <label class="form-label fs-7">Giá sale (tùy chọn):</label>
-                                <input type="number" name="sale_price" class="form-control form-control-sm">
+                                <label class="form-label fs-7">Giá ưu đãi (tùy chọn):</label>
+                                <input type="number" name="sale_price" class="form-control form-control-sm" placeholder="590000">
                             </div>
                         </div>
                         <div class="row g-2 mb-2">
@@ -383,11 +305,11 @@ function applyAiToField(fieldName) {
                             <div class="col-6 d-flex align-items-center pt-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" name="is_default" value="1" id="defVCheck">
-                                    <label class="form-check-label fs-7" for="defVCheck">Mặc định</label>
+                                    <label class="form-check-label fs-7" for="defVCheck">Đặt làm mặc định</label>
                                 </div>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-sm btn-flora w-100">Lưu biến thể</button>
+                        <button type="submit" class="btn btn-sm btn-flora w-100">Lưu biến thể mới</button>
                     </form>
                 </div>
 
@@ -404,7 +326,7 @@ function applyAiToField(fieldName) {
                                     <span class="fw-bold text-success">{{ v.effective_price|currency }}</span>
                                     {% if v.is_default %}<span class="badge bg-primary ms-1">Mặc định</span>{% endif %}
                                 </div>
-                                <form action="{% url 'dashboard:product_variant_delete' product_id=product.id variant_id=v.id %}" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa biến thể {{ v.name }}?');">
+                                <form action="{{ url_for('dashboard.product_variant_delete', product_id=product.id, variant_id=v.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa biến thể {{ v.name }}?');">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-outline-danger p-1" style="line-height: 1;" title="{% if variants|length <= 1 %}Không thể xóa biến thể duy nhất{% else %}Xóa biến thể này{% endif %}" {% if variants|length <= 1 %}disabled{% endif %}>
                                         <i class="bi bi-trash"></i>
@@ -415,29 +337,16 @@ function applyAiToField(fieldName) {
                     {% endfor %}
                 </ul>
             </div>
-
-            <!-- Thư viện ảnh phụ -->
+        {% else %}
+            <!-- Khối hướng dẫn khi thêm mới -->
             <div class="dash-card p-4">
-                <h6 class="font-serif fw-bold mb-3">Thư Viện Ảnh Chi Tiết</h6>
-                <div class="row g-2">
-                    {% if product.main_image %}
-                        <div class="col-4">
-                            <img src="{{ product.main_image.url }}" alt="Main" class="img-fluid rounded border border-success p-1 w-100" style="height: 85px; object-fit: cover;">
-                            <small class="badge bg-success w-100 mt-1">Ảnh chính</small>
-                        </div>
-                    {% endif %}
-                    {% for img in images %}
-                        <div class="col-4 position-relative">
-                            <img src="{{ img.image.url }}" alt="Sub" class="img-fluid rounded border p-1 w-100" style="height: 85px; object-fit: cover;">
-                            <form action="{% url 'dashboard:product_image_delete' product_id=product.id image_id=img.id %}" method="POST" class="position-absolute top-0 end-0 m-1" onsubmit="return confirm('Xóa ảnh phụ này?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-danger py-0 px-1 rounded-circle shadow-sm" style="font-size: 11px; line-height: 1.2;" title="Xóa ảnh này">
-                                    <i class="bi bi-x"></i>
-                                </button>
-                            </form>
-                        </div>
-                    {% endfor %}
-                </div>
+                <h6 class="font-serif fw-bold mb-3"><i class="bi bi-lightbulb-fill text-warning me-1"></i> Lưu Ý Khi Thêm Mẫu Hoa</h6>
+                <ul class="fs-7 text-muted ps-3 mb-0">
+                    <li class="mb-2"><strong>Mã SKU:</strong> Cần đặt duy nhất (ví dụ: <code>FL-BOU-011</code>). SKU sẽ tự động chuyển thành chữ hoa.</li>
+                    <li class="mb-2"><strong>Biến thể mặc định:</strong> Khi tạo sản phẩm mới, hệ thống sẽ tự động tạo một phiên bản kích thước mặc định (Size M) với mức giá và số lượng tồn kho bạn nhập ở bên cạnh.</li>
+                    <li class="mb-2"><strong>Thêm kích thước (Size S, L):</strong> Sau khi tạo thành công mẫu hoa, bạn có thể chỉnh sửa sản phẩm để thêm các kích thước Size S, Size L hoặc các ảnh chi tiết phụ.</li>
+                    <li><strong>Trợ lý AI Gemini:</strong> Hãy nhập nội dung mô tả chi tiết và bấm các nút công cụ AI để được hỗ trợ tóm tắt, tạo hashtag SEO hoặc dịch sang tiếng Anh nhanh chóng!</li>
+                </ul>
             </div>
         {% endif %}
     </div>
@@ -497,5 +406,4 @@ function applyAiToField(fieldName) {
     }
 }
 </script>
-
 {% endblock %}
