@@ -140,6 +140,35 @@ class AIFeaturesTestCase(unittest.TestCase):
         self.assertTrue(data.get('success'))
         self.assertIn('answer', data)
 
+    def test_flower_vision_endpoint(self):
+        import io
+        # 1. Test missing image
+        res_no_img = self.client.post('/ai/assistant/vision', data={})
+        self.assertEqual(res_no_img.status_code, 400)
+
+        # 2. Test invalid extension
+        bad_file = (io.BytesIO(b'test content'), 'test.txt')
+        res_bad = self.client.post(
+            '/ai/assistant/vision',
+            data={'image': bad_file},
+            content_type='multipart/form-data'
+        )
+        self.assertEqual(res_bad.status_code, 400)
+
+        # 3. Test valid image with mock LLM
+        fake_img = (io.BytesIO(b'\xff\xd8\xff\xe0\x00\x10JFIF' + b'\x00' * 50), 'flower.jpg')
+        res = self.client.post(
+            '/ai/assistant/vision',
+            data={'image': fake_img, 'query': 'Hoa này là hoa gì?'},
+            content_type='multipart/form-data'
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()
+        self.assertTrue(data.get('success'))
+        self.assertIn('answer', data)
+        self.assertIn('flower_name', data)
+        self.assertIn('products', data)
+
     def test_admin_tools_auth_guard(self):
         # Anonymous user cannot access post tools
         res = self.client.post('/ai/post-tool/summarize', json={'text': 'Test hoa'})

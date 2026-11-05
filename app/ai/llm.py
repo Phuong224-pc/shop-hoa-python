@@ -92,6 +92,58 @@ class GeminiLLM:
         except Exception as e:
             raise RuntimeError(f"Lỗi streaming từ Gemini API: {e}") from e
 
+    def generate_with_image(self, prompt: str, image_bytes: bytes, mime_type: str = 'image/jpeg', system_instruction: Optional[str] = None) -> str:
+        """
+        Generate multimodal completion from Gemini with an uploaded image.
+        """
+        if self.active_mode in ['mock', 'demo']:
+            return self._mock_vision_response(prompt)
+
+        client = self._get_client()
+        from google.genai import types
+        try:
+            config_params = {}
+            if system_instruction:
+                config_params['system_instruction'] = system_instruction
+
+            image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+            contents = [prompt, image_part]
+
+            response = client.models.generate_content(
+                model=self.model,
+                contents=contents,
+                config=config_params if config_params else None
+            )
+            return response.text or ""
+        except Exception as e:
+            if "503" in str(e) or "404" in str(e):
+                fallback_models = ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-flash-latest']
+                for fb_model in fallback_models:
+                    if fb_model != self.model:
+                        try:
+                            response = client.models.generate_content(
+                                model=fb_model,
+                                contents=contents,
+                                config=config_params if config_params else None
+                            )
+                            return response.text or ""
+                        except Exception:
+                            continue
+            raise RuntimeError(f"Lỗi phân tích hình ảnh từ Gemini API ({self.model}): {e}") from e
+
+    def _mock_vision_response(self, prompt: str) -> str:
+        """
+        Offline mock response for flower vision recognition.
+        """
+        return (
+            "Dựa trên hình ảnh bạn cung cấp, đây là **Hoa Hồng Cam Spirit (Ecuador)** phối cùng baby trắng cao cấp.\n\n"
+            "• **Màu sắc & Đặc điểm:** Tone màu cam san hô rực rỡ, cánh hoa xoáy tròn dày dặn, form hoa nở đều và tràn đầy sức sống.\n"
+            "• **Ý nghĩa biểu tượng:** Tượng trưng cho đam mê, lòng nhiệt huyết và lời chúc thành công hồng phát. Rất phù hợp làm quà tặng sinh nhật, chúc mừng thăng chức, khai trương hoặc tốt nghiệp.\n"
+            "• **Mẹo giữ hoa tươi lâu:** Cắt gốc chéo 45 độ, ngâm trong nước dưỡng hoa và tránh đặt dưới ánh nắng trực tiếp hoặc luồng gió máy lạnh.\n\n"
+            "[FLOWER_NAME: Hoa hồng cam]\n"
+            "[KEYWORDS: hồng, cam, bó hoa, sinh nhật]"
+        )
+
     def _mock_response(self, prompt: str) -> str:
         """
         Coherent offline mock response for unit tests.

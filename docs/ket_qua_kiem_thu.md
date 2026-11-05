@@ -15,7 +15,7 @@ Lệnh thực thi kiểm thử toàn bộ hệ thống:
 python run_tests.py
 ```
 
-### Kết quả thực thi chi tiết 23 Test Cases:
+### Kết quả thực thi chi tiết 24 Test Cases:
 
 ```text
 test_admin_tools_auth_guard (test_ai.AIFeaturesTestCase.test_admin_tools_auth_guard) ... ok
@@ -23,6 +23,7 @@ test_admin_writing_tools_mock (test_ai.AIFeaturesTestCase.test_admin_writing_too
 test_ai_assistant_endpoint (test_ai.AIFeaturesTestCase.test_ai_assistant_endpoint) ... ok
 test_ai_search_endpoint (test_ai.AIFeaturesTestCase.test_ai_search_endpoint) ... ok
 test_chunking_methods (test_ai.AIFeaturesTestCase.test_chunking_methods) ... ok
+test_flower_vision_endpoint (test_ai.AIFeaturesTestCase.test_flower_vision_endpoint) ... ok
 test_keywords_and_bm25 (test_ai.AIFeaturesTestCase.test_keywords_and_bm25) ... ok
 test_mock_embedder_and_vectorstore (test_ai.AIFeaturesTestCase.test_mock_embedder_and_vectorstore) ... ok
 test_prompt_injection_guard (test_ai.AIFeaturesTestCase.test_prompt_injection_guard) ... ok
@@ -43,7 +44,7 @@ test_search_and_pagination (test_catalog_crud.CatalogCRUDTestCase.test_search_an
 test_mail_sending_to_customer_and_owner (test_mail.MailTestCase.test_mail_sending_to_customer_and_owner) ... ok
 
 ----------------------------------------------------------------------
-Ran 23 tests in 5.036s
+Ran 24 tests in 10.060s
 
 OK (100% Passed)
 ```
@@ -56,6 +57,7 @@ OK (100% Passed)
 * **`test_admin_tools_auth_guard`:** Người dùng chưa đăng nhập hoặc khách hàng cố tình gọi API `/ai/post-tool/summarize` -> Nhận mã `403 Forbidden`. Bảo vệ phân quyền thành công.
 * **`test_admin_writing_tools_mock`:** Gọi 4 công cụ viết bài AI (Tóm tắt, Gợi ý hashtag, Viết lại mô tả, Dịch thuật sang tiếng Anh) -> Trả về cấu trúc JSON đúng chuẩn.
 * **`test_ai_assistant_endpoint`:** Gửi câu hỏi tư vấn hoa tới `/ai/assistant` -> Phản hồi câu trả lời kèm mảng trích dẫn nguồn `sources` và sản phẩm gợi ý `products`.
+* **`test_flower_vision_endpoint`:** Gửi ảnh hoa tươi lên `/ai/assistant/vision` -> Nhận diện loài hoa bằng Gemini Vision (hoa hồng cam, đặc điểm, ý nghĩa, mẹo chăm sóc) và đối soát gợi ý danh mục sản phẩm của shop.
 * **`test_ai_search_endpoint`:** Tìm kiếm ngữ nghĩa `/ai/search?q=hoa+sinh+nhat` -> Trả về danh sách hoa tươi phù hợp nhất theo điểm Hybrid Search.
 * **`test_chunking_methods`:** Kiểm tra phân đoạn văn bản Markdown theo tiêu đề và trượt cửa sổ sliding window 800 ký tự (gối đầu 150 ký tự).
 * **`test_keywords_and_bm25`:** Tách từ tiếng Việt, lọc từ dừng và tính điểm BM25 cho tài liệu tri thức.
@@ -109,6 +111,7 @@ Kiểm thử toàn diện các tuyến đường dẫn (Routes) trên hệ thố
 | **Auth** | `/accounts/register` (Đăng ký) | GET | 200 | OK |
 | **Trợ lý AI** | `/ai/assistant` (Trang chat Trợ lý AI) | GET | 200 | OK |
 | **Trợ lý AI** | `/ai/assistant/stream` (SSE Streaming) | POST | 200 | OK |
+| **Trợ lý AI** | `/ai/assistant/vision` (Gemini Multimodal Vision) | POST | 200 | OK |
 | **Trợ lý AI** | `/ai/search` (Tìm kiếm ngữ nghĩa thông minh) | GET | 200 | OK |
 | **REST API** | `/api/v1/products` (Danh sách JSON) | GET | 200 | OK |
 | **REST API** | `/api/v1/products/1` (Chi tiết JSON) | GET | 200 | OK |

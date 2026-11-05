@@ -119,6 +119,65 @@ def assistant_stream():
     return Response(stream_with_context(event_stream()), mimetype='text/event-stream')
 
 
+@bp.route('/assistant/vision', methods=['POST'])
+def assistant_vision():
+    """
+    Multimodal Flower Vision analysis endpoint.
+    Receives an uploaded flower image and optional user prompt,
+    identifies the flower species, meaning, and recommends matching products in shop.
+    """
+    client_key = get_client_ip()
+    allowed, retry_after = rate_limiter.is_allowed(client_key)
+    if not allowed:
+        return jsonify({
+            'success': False,
+            'error': f'Bạn đã gửi quá nhiều yêu cầu trong thời gian ngắn. Vui lòng thử lại sau {retry_after} giây.'
+        }), 429
+
+    # Check image upload
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'error': 'Vui lòng chọn hình ảnh hoa để phân tích.'}), 400
+
+    file = request.files['image']
+    if not file or not file.filename:
+        return jsonify({'success': False, 'error': 'Tệp hình ảnh không hợp lệ.'}), 400
+
+    filename = file.filename.lower()
+    allowed_exts = {'.jpg', '.jpeg', '.png', '.webp', '.heic', '.bmp'}
+    ext = Path(filename).suffix
+    if ext not in allowed_exts:
+        return jsonify({'success': False, 'error': 'Chỉ chấp nhận file ảnh định dạng JPG, JPEG, PNG, WEBP.'}), 400
+
+    image_bytes = file.read()
+    if len(image_bytes) > 10 * 1024 * 1024:
+        return jsonify({'success': False, 'error': 'Kích thước ảnh tối đa là 10MB.'}), 400
+
+    mime_type = file.mimetype or 'image/jpeg'
+    if mime_type not in ['image/jpeg', 'image/png', 'image/webp']:
+        mime_type = 'image/jpeg'
+
+    raw_query = request.form.get('query', '').strip()
+    query = sanitize_input(raw_query) if raw_query else ''
+
+    from app.ai.vision import analyze_flower_image_and_recommend
+    try:
+        result = analyze_flower_image_and_recommend(
+            image_bytes=image_bytes,
+            mime_type=mime_type,
+            user_prompt=query
+        )
+
+        history = session.get('ai_chat_history', [])
+        user_text = query if query else "📷 [Đã gửi một hình ảnh hoa tươi để nhận diện]"
+        history.append({'role': 'user', 'content': user_text})
+        history.append({'role': 'assistant', 'content': result['answer']})
+        session['ai_chat_history'] = history[-6:]
+
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @bp.route('/assistant/clear', methods=['POST'])
 def clear_history():
     session.pop('ai_chat_history', None)

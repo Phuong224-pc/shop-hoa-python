@@ -1,25 +1,25 @@
 {% extends 'base.html' %}
 {% load static core_tags %}
 
-{% block title %}Trợ Lý Hoa Tươi AI - {{ shop_setting.shop_name }}{% endblock %}
+{% block title %}Trợ Lý Hoa Tươi AI & Nhận Diện Hoa - {{ shop_setting.shop_name }}{% endblock %}
 
 {% block extra_css %}
 <style>
 .chat-container {
-    max-width: 900px;
+    max-width: 920px;
     margin: 0 auto;
     background: #FFFFFF;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: 75vh;
+    height: 78vh;
 }
 .chat-header {
     background: linear-gradient(135deg, #1B3C2E 0%, #2A5A46 100%);
     color: #FFF;
-    padding: 20px 28px;
+    padding: 18px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -109,6 +109,19 @@
     object-fit: cover;
     border-radius: 8px;
 }
+.camera-btn {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border: 1px solid #D1E5DC;
+    background: #F4F8F6;
+    color: #1B3C2E;
+    transition: all 0.2s;
+}
+.camera-btn:hover {
+    background: #1B3C2E;
+    color: #FFF;
+}
 </style>
 {% endblock %}
 
@@ -122,8 +135,8 @@
                     <i class="bi bi-robot"></i>
                 </div>
                 <div>
-                    <h5 class="mb-0 fw-bold font-serif">Flora AI Assistant</h5>
-                    <small class="text-white-50">Tư vấn chọn hoa, ngân sách & giải đáp chính sách cửa hàng</small>
+                    <h5 class="mb-0 fw-bold font-serif">Flora AI Assistant & Thị Giác Hoa</h5>
+                    <small class="text-white-50">Tư vấn chọn hoa, nhận diện hoa qua ảnh & gợi ý mẫu tương tự</small>
                 </div>
             </div>
             <div class="d-flex gap-2">
@@ -147,14 +160,16 @@
                     Xin chào Quý khách! Em là trợ lý thông minh của <strong>Flora Flower Boutique</strong>. 
                     Em có thể giúp Quý khách:
                     <ul class="mb-2 ps-3 mt-1">
-                        <li>Gợi ý hoa theo dịp: sinh nhật, kỷ niệm, khai trương, tỏ tình, chia buồn...</li>
-                        <li>Lọc hoa theo ngân sách (ví dụ: <em>dưới 500 nghìn</em>, <em>dưới 1 triệu</em>...)</li>
-                        <li>Giải đáp chính sách giao hỏa tốc 2 giờ, đổi trả 1-đổi-1, thanh toán VietQR</li>
-                        <li>Hướng dẫn cách cắm và chăm sóc hoa tươi lâu 5-7 ngày</li>
+                        <li><strong>📷 Nhận diện loài hoa qua ảnh:</strong> Bấm vào biểu tượng máy ảnh bên dưới, gửi ảnh hoa bất kỳ -> Em sẽ phân tích loài hoa, ý nghĩa và tìm các mẫu hoa tương tự có sẵn trong shop!</li>
+                        <li><strong>🌸 Gợi ý hoa theo dịp:</strong> Sinh nhật, kỷ niệm, khai trương, tỏ tình, chia buồn...</li>
+                        <li><strong>💰 Lọc hoa theo ngân sách:</strong> (ví dụ: <em>dưới 500 nghìn</em>, <em>dưới 1 triệu</em>...)</li>
+                        <li><strong>🚚 Giải đáp chính sách:</strong> Giao hỏa tốc 2 giờ, đổi trả 1-đổi-1, thanh toán VietQR</li>
+                        <li><strong>💧 Hướng dẫn cách chăm sóc:</strong> Giữ hoa tươi lâu 5-7 ngày</li>
                     </ul>
-                    Quý khách có thể bấm chọn gợi ý bên dưới hoặc gõ câu hỏi ạ!
+                    Quý khách có thể bấm chọn gợi ý bên dưới hoặc tải ảnh/gõ câu hỏi ạ!
                 </div>
                 <div class="d-flex flex-wrap gap-2 mt-3">
+                    <a href="javascript:void(0)" class="quick-pill" onclick="document.getElementById('flowerImageInput').click();">📷 Tải ảnh hoa để AI nhận diện</a>
                     <a href="javascript:void(0)" class="quick-pill" onclick="sendQuickPrompt('Hoa sinh nhật tặng mẹ tông màu nhẹ nhàng dưới 500k')">🌸 Hoa sinh nhật tặng mẹ dưới 500k</a>
                     <a href="javascript:void(0)" class="quick-pill" onclick="sendQuickPrompt('Chính sách giao hoa hỏa tốc và phí ship')">🚚 Chính sách giao hỏa tốc</a>
                     <a href="javascript:void(0)" class="quick-pill" onclick="sendQuickPrompt('Hoa khai trương mang ý nghĩa hồng phát')">🎉 Hoa mừng khai trương</a>
@@ -181,15 +196,38 @@
 
         <!-- Input Box -->
         <div class="p-3 bg-white border-top">
+            <!-- Image preview bar (when image is selected) -->
+            <div id="imagePreviewContainer" class="d-none align-items-center gap-3 mb-2 p-2 bg-light rounded-3 border">
+                <img id="imagePreview" src="" class="rounded border" style="width: 52px; height: 52px; object-fit: cover;">
+                <div class="flex-grow-1 fs-7">
+                    <div class="fw-semibold text-dark text-truncate" style="max-width: 320px;" id="imageFileName">anh-hoa.jpg</div>
+                    <small class="text-success"><i class="bi bi-stars"></i> Gemini Vision sẽ phân tích loài hoa & tìm sản phẩm tương tự trong shop</small>
+                </div>
+                <button type="button" class="btn btn-sm btn-link text-danger p-1" id="removeImageBtn" title="Hủy ảnh này">
+                    <i class="bi bi-x-circle-fill fs-5"></i>
+                </button>
+            </div>
+
             <form id="chatForm" class="d-flex gap-2 align-items-center">
-                <input type="text" id="userInput" class="form-control rounded-pill px-4 py-2 border" placeholder="Hỏi bất kỳ điều gì: mẫu hoa, ngân sách, cách chăm sóc..." autocomplete="off" required>
-                <button type="submit" id="sendBtn" class="btn btn-flora rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; flex-shrink: 0;" title="Gửi câu hỏi">
+                <input type="hidden" id="csrfTokenHidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="file" id="flowerImageInput" accept="image/*" class="d-none">
+                
+                <!-- Image upload trigger button -->
+                <button type="button" id="uploadImageBtn" class="btn camera-btn rounded-circle d-flex align-items-center justify-content-center" title="Tải ảnh hoa để AI phân tích và gợi ý mẫu hoa tương tự">
+                    <i class="bi bi-camera-fill fs-5"></i>
+                </button>
+
+                <!-- Text input -->
+                <input type="text" id="userInput" class="form-control rounded-pill px-4 py-2 border" placeholder="Hỏi bất kỳ điều gì hoặc bấm nút máy ảnh để nhận diện hoa..." autocomplete="off">
+                
+                <!-- Send button -->
+                <button type="submit" id="sendBtn" class="btn btn-flora rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; flex-shrink: 0;" title="Gửi">
                     <i class="bi bi-send-fill text-white"></i>
                 </button>
             </form>
             <div class="d-flex justify-content-between align-items-center mt-2 px-2 text-muted fs-8">
-                <span><i class="bi bi-shield-check text-success me-1"></i> Thông tin được xác thực từ dữ liệu cửa hàng Flora Flower</span>
-                <span>Powered by Google Gemini</span>
+                <span><i class="bi bi-shield-check text-success me-1"></i> Phân tích ảnh hoa & đối soát sản phẩm có sẵn tại Flora Flower</span>
+                <span>Powered by Google Gemini Multimodal</span>
             </div>
         </div>
     </div>
@@ -202,6 +240,16 @@ const chatMessages = document.getElementById('chatMessages');
 const chatForm = document.getElementById('chatForm');
 const userInput = document.getElementById('userInput');
 const sendBtn = document.getElementById('sendBtn');
+const uploadImageBtn = document.getElementById('uploadImageBtn');
+const flowerImageInput = document.getElementById('flowerImageInput');
+const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+const imagePreview = document.getElementById('imagePreview');
+const imageFileName = document.getElementById('imageFileName');
+const removeImageBtn = document.getElementById('removeImageBtn');
+const csrfTokenHidden = document.getElementById('csrfTokenHidden');
+
+let selectedImageFile = null;
+let selectedImageUrl = null;
 
 function scrollToBottom() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -213,11 +261,157 @@ function sendQuickPrompt(text) {
     chatForm.dispatchEvent(new Event('submit'));
 }
 
+// 1. Handle image selection
+uploadImageBtn.addEventListener('click', function() {
+    flowerImageInput.click();
+});
+
+flowerImageInput.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+        selectedImageFile = this.files[0];
+        if (selectedImageUrl) {
+            URL.revokeObjectURL(selectedImageUrl);
+        }
+        selectedImageUrl = URL.createObjectURL(selectedImageFile);
+        imagePreview.src = selectedImageUrl;
+        imageFileName.textContent = selectedImageFile.name;
+        imagePreviewContainer.classList.remove('d-none');
+        imagePreviewContainer.classList.add('d-flex');
+        userInput.placeholder = "Ghi chú thêm về ảnh (hoặc bấm nút gửi để AI nhận diện ngay)...";
+        userInput.focus();
+    }
+});
+
+removeImageBtn.addEventListener('click', function() {
+    selectedImageFile = null;
+    if (selectedImageUrl) {
+        URL.revokeObjectURL(selectedImageUrl);
+        selectedImageUrl = null;
+    }
+    flowerImageInput.value = '';
+    imagePreviewContainer.classList.add('d-none');
+    imagePreviewContainer.classList.remove('d-flex');
+    userInput.placeholder = "Hỏi bất kỳ điều gì hoặc bấm nút máy ảnh để nhận diện hoa...";
+});
+
+// 2. Handle form submit
 chatForm.addEventListener('submit', function(e) {
     e.preventDefault();
     const query = userInput.value.trim();
-    if (!query) return;
 
+    // Must have either text or image
+    if (!query && !selectedImageFile) {
+        return;
+    }
+
+    // CASE A: User uploaded an image -> Process with Gemini Multimodal Vision
+    if (selectedImageFile) {
+        const currentFile = selectedImageFile;
+        const currentUrl = selectedImageUrl;
+
+        // 1. Append user bubble with image thumbnail
+        const userBubble = document.createElement('div');
+        userBubble.className = 'msg-bubble msg-user';
+        let userContent = `<img src="${currentUrl}" class="rounded mb-2 shadow-sm w-100" style="max-height: 220px; object-fit: cover;">`;
+        userContent += `<div>${query ? query : '📷 Nhận diện loài hoa trong ảnh và gợi ý mẫu hoa tương tự có sẵn trong shop.'}</div>`;
+        userBubble.innerHTML = userContent;
+        chatMessages.appendChild(userBubble);
+
+        // Reset input UI
+        userInput.value = '';
+        userInput.disabled = true;
+        sendBtn.disabled = true;
+        uploadImageBtn.disabled = true;
+        imagePreviewContainer.classList.add('d-none');
+        imagePreviewContainer.classList.remove('d-flex');
+        selectedImageFile = null;
+        selectedImageUrl = null;
+        flowerImageInput.value = '';
+        userInput.placeholder = "Hỏi bất kỳ điều gì hoặc bấm nút máy ảnh để nhận diện hoa...";
+        scrollToBottom();
+
+        // 2. Prepare Assistant Bubble
+        const aiBubble = document.createElement('div');
+        aiBubble.className = 'msg-bubble msg-assistant';
+        aiBubble.innerHTML = `
+            <div class="d-flex align-items-center gap-2 mb-1 text-success fw-bold fs-7">
+                <i class="bi bi-flower1"></i> Flora Florist AI (Gemini Vision)
+            </div>
+            <div class="ai-text-content" style="white-space: pre-line;">
+                <span class="spinner-border spinner-border-sm text-success me-2"></span> Đang phân tích bức ảnh hoa bằng Gemini Vision & tìm kiếm mẫu hoa tương tự trong shop...
+            </div>
+            <div class="ai-products mt-2 d-none"></div>
+        `;
+        chatMessages.appendChild(aiBubble);
+        scrollToBottom();
+
+        const textContentEl = aiBubble.querySelector('.ai-text-content');
+        const productsEl = aiBubble.querySelector('.ai-products');
+
+        // 3. Send FormData to Vision endpoint
+        const formData = new FormData();
+        formData.append('image', currentFile);
+        if (query) {
+            formData.append('query', query);
+        }
+        if (csrfTokenHidden) {
+            formData.append('csrf_token', csrfTokenHidden.value);
+        }
+
+        fetch('/ai/assistant/vision', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            uploadImageBtn.disabled = false;
+            userInput.focus();
+
+            if (data.success) {
+                textContentEl.innerHTML = data.answer.replace(/\n/g, '<br>');
+
+                // Render recommended products
+                if (data.products && data.products.length > 0) {
+                    productsEl.classList.remove('d-none');
+                    let prodHtml = `
+                        <div class="fs-7 fw-bold text-dark mt-3 mb-1">
+                            <i class="bi bi-bag-heart text-danger me-1"></i> Các mẫu hoa liên quan có sẵn tại shop:
+                        </div>
+                    `;
+                    data.products.forEach(p => {
+                        prodHtml += `
+                            <a href="${p.url || '/products/' + (p.slug || p.id)}" class="product-card-mini">
+                                <img src="${p.image}" alt="${p.name}">
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold fs-7 text-dark">${p.name}</div>
+                                    <div class="text-success fw-bold fs-7">${Number(p.price).toLocaleString('vi-VN')} đ</div>
+                                </div>
+                                <span class="badge ${p.in_stock ? 'bg-success-subtle text-success' : 'bg-secondary'} fs-8">
+                                    ${p.in_stock ? 'Có sẵn' : 'Tạm hết'}
+                                </span>
+                            </a>
+                        `;
+                    });
+                    productsEl.innerHTML = prodHtml;
+                }
+                scrollToBottom();
+            } else {
+                textContentEl.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> ${data.error || 'Không thể phân tích ảnh hoa. Vui lòng thử lại.'}</span>`;
+            }
+        })
+        .catch(err => {
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            uploadImageBtn.disabled = false;
+            textContentEl.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> Lỗi kết nối: ${err.message}</span>`;
+        });
+
+        return;
+    }
+
+    // CASE B: Pure Text Query -> Process with SSE streaming
     // 1. Append user message bubble
     const userBubble = document.createElement('div');
     userBubble.className = 'msg-bubble msg-user';
@@ -226,6 +420,7 @@ chatForm.addEventListener('submit', function(e) {
     userInput.value = '';
     userInput.disabled = true;
     sendBtn.disabled = true;
+    uploadImageBtn.disabled = true;
     scrollToBottom();
 
     // 2. Prepare Assistant Bubble for streaming
@@ -255,6 +450,7 @@ chatForm.addEventListener('submit', function(e) {
             eventSource.close();
             userInput.disabled = false;
             sendBtn.disabled = false;
+            uploadImageBtn.disabled = false;
             userInput.focus();
             scrollToBottom();
             return;
@@ -308,6 +504,7 @@ chatForm.addEventListener('submit', function(e) {
                 eventSource.close();
                 userInput.disabled = false;
                 sendBtn.disabled = false;
+                uploadImageBtn.disabled = false;
             }
         } catch(err) {
             console.error('SSE parse error:', err);
@@ -321,8 +518,8 @@ chatForm.addEventListener('submit', function(e) {
         }
         userInput.disabled = false;
         sendBtn.disabled = false;
+        uploadImageBtn.disabled = false;
     };
 });
 </script>
 {% endblock %}
-
