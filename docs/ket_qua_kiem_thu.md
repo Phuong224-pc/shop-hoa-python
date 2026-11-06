@@ -44,7 +44,7 @@ test_search_and_pagination (test_catalog_crud.CatalogCRUDTestCase.test_search_an
 test_mail_sending_to_customer_and_owner (test_mail.MailTestCase.test_mail_sending_to_customer_and_owner) ... ok
 
 ----------------------------------------------------------------------
-Ran 24 tests in 10.060s
+Ran 24 tests in 5.960s
 
 OK (100% Passed)
 ```

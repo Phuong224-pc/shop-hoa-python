@@ -441,7 +441,7 @@ Bộ kiểm thử được viết bằng module `unittest` tại thư mục [`te
 
 ```powershell
 # Kết quả thực tế khi thực thi lệnh python run_tests.py:
-Ran 24 tests in 10.060s
+Ran 24 tests in 5.960s
 
 OK
 ```

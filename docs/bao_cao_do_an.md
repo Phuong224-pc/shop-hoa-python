@@ -26,7 +26,7 @@
 | :---: | :---: | :---: | :--- | :---: |
 | 1 | [Cần bổ sung] | [Cần bổ sung] | Kiến trúc ứng dụng Flask (App Factory, Blueprints), Mô hình CSDL SQLAlchemy, Dịch vụ Email Flask-Mail, Tích hợp Gemini API & RAG | [Cần bổ sung] |
 | 2 | [Cần bổ sung] | [Cần bổ sung] | Routes, Blueprints, Form Validation (Flask-WTF), Logic Giỏ hàng, Đặt hoa theo lịch, Thanh toán VietQR & Đối soát | [Cần bổ sung] |
-| 3 | [Cần bổ sung] | [Cần bổ sung] | Hệ thống giao diện Jinja2 (Storefront & Dashboard), REST API (CLO3), Kịch bản Client, Bộ kiểm thử tự động 23 Unit Tests | [Cần bổ sung] |
+| 3 | [Cần bổ sung] | [Cần bổ sung] | Hệ thống giao diện Jinja2 (Storefront & Dashboard), REST API (CLO3), Kịch bản Client, Bộ kiểm thử tự động 24 Unit Tests | [Cần bổ sung] |
 
 ---
 
@@ -46,7 +46,7 @@
 | **CLO3** | Lập trình mạng: urllib/requests, API key, JSON/XML, lập trình mạng Internet | **10%** | Hoàn thành xuất sắc: REST API JSON `/api/v1/...`, script client HTTP đọc dữ liệu, tích hợp Gemini API qua Google GenAI SDK | ... / 1.0 |
 | **CLO4** | Sử dụng thành thạo thư viện Python (Flask, Flask-WTF, Flask-SQLAlchemy, Flask-Mail, google-genai, numpy, Pillow, requests...) | **20%** | Sử dụng sâu và kết hợp nhuần nhuyễn 12+ thư viện chính thức trong hệ sinh thái Python hiện đại | ... / 2.0 |
 | **CLO5** | Kỹ năng viết báo cáo, module hóa code, cấu trúc rõ ràng, dễ bảo trì | **10%** | Kiến trúc chuẩn Large Application Structure (`app/`), phân tách blueprints, forms, models, services, ai; báo cáo học thuật đầy đủ | ... / 1.0 |
-| **CLO6** | Thái độ nghiêm túc, chủ động trong thực hiện và trình bày đồ án | **10%** | Bộ kiểm thử tự động 23/23 tests ĐẠT 100%, bảo toàn dữ liệu gốc, tài liệu minh chứng và hướng dẫn chạy chi tiết | ... / 1.0 |
+| **CLO6** | Thái độ nghiêm túc, chủ động trong thực hiện và trình bày đồ án | **10%** | Bộ kiểm thử tự động 24/24 tests ĐẠT 100%, bảo toàn dữ liệu gốc, tài liệu minh chứng và hướng dẫn chạy chi tiết | ... / 1.0 |
 | **TỔNG ĐIỂM** | **Đánh giá tổng hợp toàn diện đồ án** | **100%** | **Đạt chuẩn xuất sắc các yêu cầu đề ra** | **... / 10** |
 
 ---
@@ -73,7 +73,7 @@
    3.8. [Chức năng mở rộng của nhóm: Trợ lý AI & Kỹ thuật RAG, VietQR, Kho](#38-chức-năng-mở-rộng-của-nhóm)  
 4. [KẾT QUẢ VÀ KIỂM THỬ](#4-kết-quả-và-kiểm-thử)  
    4.1. [Kết quả giao diện](#41-kết-quả-giao-diện)  
-   4.2. [Kiểm thử chức năng (Bảng 23 ca kiểm thử tự động)](#42-kiểm-thử-chức-năng)  
+   4.2. [Kiểm thử chức năng (Bảng 24 ca kiểm thử tự động)](#42-kiểm-thử-chức-năng)  
    4.3. [Kiểm thử dịch vụ Email](#43-kiểm-thử-dịch-vụ-email)  
 5. [KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN](#5-kết-luận-và-hướng-phát-triển)  
    5.1. [Kết quả đạt được](#51-kết-quả-đạt-được)  
@@ -102,7 +102,7 @@ Trong bối cảnh thương mại điện tử phát triển mạnh mẽ, dịch
   * **CLO3 (10%):** Hiện thực yếu tố lập trình mạng Internet: Xây dựng hệ thống REST API JSON chuẩn hóa, kịch bản Client (`requests`/`urllib`) đọc dữ liệu qua mạng, và tích hợp API đối tác bên ngoài (Google Gemini API).
   * **CLO4 (20%):** Sử dụng thành thạo và phối hợp hiệu quả hệ sinh thái thư viện Python: Flask, Flask-WTF, WTForms, Flask-SQLAlchemy, Flask-Login, Flask-Mail, google-genai, numpy, Pillow, requests.
   * **CLO5 (10%):** Cấu trúc mã nguồn module hóa rõ ràng, dễ bảo trì, mã nguồn sạch sẽ, không dư thừa.
-  * **CLO6 (10%):** Đầy đủ bộ kiểm thử tự động 23 unit tests (`run_tests.py`), đảm bảo tính toàn vẹn dữ liệu và an toàn bảo mật.
+  * **CLO6 (10%):** Đầy đủ bộ kiểm thử tự động 24 unit tests (`run_tests.py`), đảm bảo tính toàn vẹn dữ liệu và an toàn bảo mật.
 * **Phạm vi hệ thống:** Xây dựng giải pháp trọn gói cho cửa hàng hoa tươi: Cổng khách hàng (Storefront), Cổng quản trị nghiệp vụ (Dashboard), Trợ lý tư vấn AI & Tìm kiếm thông minh (AI & RAG Assistant), Hệ thống REST API (API v1).
 
 ### 1.3. Công nghệ sử dụng
@@ -269,13 +269,13 @@ d:\shophoa-python\
 │   └── __init__.py                 # Application Factory (create_app)
 ├── config.py                       # Cấu hình đa môi trường (Dev, Test, Prod)
 ├── run.py                          # Điểm khởi chạy ứng dụng Flask
-├── run_tests.py                    # Trình thực thi 23 Unit Tests tự động
+├── run_tests.py                    # Trình thực thi 24 Unit Tests tự động
 ├── requirements.txt                # Danh sách dependencies
 ├── .env.example                    # File mẫu cấu hình biến môi trường
 ├── scripts\                        # Script Client kiểm thử mạng CLO3
 │   └── test_api_client.py
-├── tests\                          # Bộ kiểm thử tự động (23 Test Cases)
-│   ├── test_ai.py                  # [MỚI] 9 bài kiểm thử chức năng AI & RAG
+├── tests\                          # Bộ kiểm thử tự động (24 Test Cases)
+│   ├── test_ai.py                  # [MỚI] 10 bài kiểm thử chức năng AI & RAG & Vision
 │   ├── test_api.py                 # 4 bài kiểm thử REST API
 │   ├── test_auth.py                # 4 bài kiểm thử xác thực & phân quyền
 │   ├── test_cart_order.py          # 2 bài kiểm thử giỏ hàng & tồn kho
@@ -495,7 +495,7 @@ Toàn bộ 24 ca kiểm thử được tự động hóa qua tập tin [`run_tes
 
 ```powershell
 # Kết quả thực tế khi thực thi lệnh python run_tests.py:
-Ran 24 tests in 10.060s
+Ran 24 tests in 5.960s
 
 OK
 ```
@@ -565,7 +565,7 @@ OK
    Copy-Item .env.example .env
    ```
    *(Điền API Key `GEMINI_API_KEY` nếu muốn thử nghiệm tương tác AI thật, hoặc giữ nguyên để hệ thống tự động chạy chế độ Mock an toàn).*
-5. **Chạy kiểm thử tự động 23 bài test:**
+5. **Chạy kiểm thử tự động 24 bài test:**
    ```powershell
    python run_tests.py
    ```
