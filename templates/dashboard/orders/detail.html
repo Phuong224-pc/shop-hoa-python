@@ -224,7 +224,7 @@
                         {% endif %}
                     {% else %}
                         <div class="alert alert-success p-2 mb-0 fs-7">
-                            <i class="bi bi-check-circle-fill me-1"></i> Đã xác nhận thu tiền bởi {{ payment.verified_by|default('Hệ thống') }} lúc {{ payment.verified_at|date("d/m/Y H:i") }}.
+                            <i class="bi bi-check-circle-fill me-1"></i> Đã xác nhận thu tiền bởi {{ payment.verified_by.full_name if payment.verified_by else 'Hệ thống' }} lúc {{ payment.verified_at|date("d/m/Y H:i") }}.
                         </div>
                     {% endif %}
                 </div>

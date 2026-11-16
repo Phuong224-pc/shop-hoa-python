@@ -909,21 +909,34 @@ def payment_verify(id):
     if action in ['approve', 'cod_confirm']:
         tx.status = 'PAID'
         tx.verified_at = datetime.utcnow()
-        tx.verified_by_id = current_user.id
+        tx.verified_by_id = current_user.id if getattr(current_user, 'is_authenticated', False) else None
         if tx.order:
-            tx.order.payment_status = 'PAID'
             if tx.order.status in ['PENDING', 'CONFIRMED']:
                 tx.order.status = 'CONFIRMED'
+            try:
+                from app.models.order import OrderStatusHistory
+                history_entry = OrderStatusHistory(
+                    order_id=tx.order.id,
+                    status=tx.order.status,
+                    notes=f"Đã đối soát & xác nhận thu tiền thành công ({tx.get_payment_method_display}).",
+                    created_by_id=tx.verified_by_id
+                )
+                db.session.add(history_entry)
+            except Exception:
+                pass
         AuditLog.log(current_user, 'UPDATE', 'Payment', tx.id, tx.transaction_code, "Xác nhận đối soát thanh toán thành công (PAID).")
         flash(f'Đã xác nhận thanh toán đơn hàng #{tx.order.order_number if tx.order else tx.id} thành công.', 'success')
     elif action == 'reject':
         tx.status = 'FAILED'
-        tx.rejection_reason = request.form.get('reason', 'Giao dịch không hợp lệ').strip()
+        tx.rejection_reason = (request.form.get('rejection_reason') or request.form.get('reason') or 'Giao dịch không hợp lệ').strip()
         AuditLog.log(current_user, 'UPDATE', 'Payment', tx.id, tx.transaction_code, f"Từ chối thanh toán: {tx.rejection_reason}")
         flash('Đã từ chối giao dịch thanh toán.', 'warning')
 
     db.session.commit()
-    return redirect(request.referrer or url_for('dashboard.payment_list'))
+    redirect_target = request.referrer
+    if not redirect_target:
+        redirect_target = url_for('dashboard.order_detail', id=tx.order_id) if tx.order else url_for('dashboard.payment_list')
+    return redirect(redirect_target)
 
 
 @bp.route('/payments/<int:id>/proof')

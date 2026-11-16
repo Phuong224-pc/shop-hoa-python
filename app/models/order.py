@@ -77,12 +77,24 @@ class Order(db.Model):
             return 'UNPAID'
         return latest.status
 
+    @payment_status.setter
+    def payment_status(self, value):
+        latest = self.payment
+        if latest:
+            latest.status = value
+
     @property
     def payment_method(self):
         latest = self.payment
         if not latest:
             return 'COD'
         return latest.payment_method
+
+    @payment_method.setter
+    def payment_method(self, value):
+        latest = self.payment
+        if latest:
+            latest.payment_method = value
 
     @property
     def get_delivery_method_display(self):

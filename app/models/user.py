@@ -107,6 +107,9 @@ class User(UserMixin, db.Model):
     def is_staff_or_admin(self):
         return self.role in ['ADMIN', 'STAFF']
 
+    def __str__(self):
+        return self.full_name or self.username
+
     def __repr__(self):
         return f"<User {self.username} ({self.role})>"
 
