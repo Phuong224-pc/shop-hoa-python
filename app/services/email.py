@@ -43,6 +43,19 @@ def send_via_resend(api_key, subject, recipients, html_body):
             logger.info(f"[RESEND LIVE] Đã gửi email thành công tới {recipients} qua HTTPS port 443.")
         else:
             logger.warning(f"[RESEND FAILED] Phản hồi từ Resend ({resp.status_code}): {resp.text}")
+            # Nếu tài khoản Resend Free chưa add domain riêng, Resend chỉ cho phép gửi tới email đăng ký tài khoản (phuongtruong121204@gmail.com)
+            owner_email = os.environ.get('SHOP_NOTIFICATION_EMAIL', 'phuongtruong121204@gmail.com')
+            if resp.status_code == 403 and 'testing emails' in resp.text:
+                payload['to'] = [owner_email]
+                payload['subject'] = f"[Bản sao KH] {payload['subject']}"
+                retry_resp = requests.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                    json=payload,
+                    timeout=10
+                )
+                if retry_resp.status_code in [200, 201]:
+                    logger.info(f"[RESEND FALLBACK] Đã chuyển tiếp bản sao email về {owner_email}")
     except Exception as e:
         logger.error(f"[RESEND ERROR] Không thể gửi email qua Resend: {e}")
 
