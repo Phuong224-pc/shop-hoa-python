@@ -1,7 +1,8 @@
+from __future__ import annotations
 import os
 import re
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Generator
+from typing import Tuple, List, Dict, Any, Optional, Generator
 from app.extensions import db
 from app.models.ai import AiChunk
 from app.models.catalog import Product, Category, Occasion
@@ -162,7 +163,7 @@ def delete_product_index(product_id: int):
     AiChunk.query.filter_by(source='product', ref_id=str(product_id)).delete()
     db.session.commit()
 
-def build_rag_context(query: str, top_k: int = 5) -> Tuple_RAG:
+def build_rag_context(query: str, top_k: int = 5) -> Tuple[str, List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Retrieves matching chunks and builds numbered context string with citations.
     """
@@ -203,10 +204,6 @@ def build_rag_context(query: str, top_k: int = 5) -> Tuple_RAG:
 
     context_str = "\n".join(context_lines) if context_lines else "Hiện chưa có tài liệu cụ thể phù hợp với yêu cầu này."
     return context_str, citations, product_cards
-
-class Tuple_RAG:
-    # Helper type
-    pass
 
 def ask_flower_assistant(query: str, history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
     """
