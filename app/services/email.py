@@ -20,6 +20,32 @@ def log_email_to_file(subject, recipients, html_body):
         f.write(html_body)
         f.write(f"\n{'='*75}\n")
 
+def send_via_resend(api_key, subject, recipients, html_body):
+    """Gửi email qua Resend REST API (HTTPS port 443) - Bỏ qua rào cản chặn port SMTP 587 của Render Free."""
+    try:
+        import requests
+        sender = os.environ.get('MAIL_DEFAULT_SENDER', 'Flora Flower <onboarding@resend.dev>')
+        if '@resend.dev' not in sender and not os.environ.get('RESEND_CUSTOM_DOMAIN'):
+            sender = 'Flora Flower <onboarding@resend.dev>'
+        payload = {
+            "from": sender,
+            "to": recipients if isinstance(recipients, list) else [recipients],
+            "subject": f"[Flora Flower] {subject}",
+            "html": html_body
+        }
+        resp = requests.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=10
+        )
+        if resp.status_code in [200, 201]:
+            logger.info(f"[RESEND LIVE] Đã gửi email thành công tới {recipients} qua HTTPS port 443.")
+        else:
+            logger.warning(f"[RESEND FAILED] Phản hồi từ Resend ({resp.status_code}): {resp.text}")
+    except Exception as e:
+        logger.error(f"[RESEND ERROR] Không thể gửi email qua Resend: {e}")
+
 def send_async_email(app, msg):
     with app.app_context():
         try:
@@ -55,6 +81,12 @@ def send_email(subject, recipients, html_body, text_body=None, sync=False):
         except Exception as e:
             logger.warning(f"Test mail send failed: {e}")
             return False, str(e)
+
+    # 2.5 Hỗ trợ Resend API qua HTTPS Port 443 (Khắc phục việc Render Free chặn cổng SMTP 587/465)
+    resend_key = os.environ.get('RESEND_API_KEY', '').strip()
+    if resend_key:
+        Thread(target=send_via_resend, args=(resend_key, subject, recipients_list, html_body)).start()
+        return True, "Email queued for Resend API"
 
     # 3. Kiểm tra tài khoản SMTP trong file .env
     mail_username = app.config.get('MAIL_USERNAME')
