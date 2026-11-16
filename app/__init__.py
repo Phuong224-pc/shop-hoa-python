@@ -3,7 +3,7 @@ from decimal import Decimal
 from datetime import datetime
 from flask import Flask, send_from_directory, render_template, request, session
 from markupsafe import Markup
-from config import config_by_name, BASE_DIR
+from config import config_by_name, BASE_DIR, ProductionConfig, DevelopmentConfig
 from app.extensions import db, migrate, login_manager, mail, csrf
 from app.models.core import ShopSetting
 from app.models.catalog import Category
@@ -17,8 +17,10 @@ if not hasattr(FlaskRequest, 'POST'):
     FlaskRequest.POST = property(lambda self: self.form, lambda self, val: None)
 
 def create_app(config_name=None):
-    if config_name is None:
-        config_name = os.environ.get('FLASK_CONFIG', 'development')
+    if not config_name:
+        config_name = os.environ.get('FLASK_CONFIG', 'production')
+    norm_config = str(config_name).lower().strip()
+    target_config = config_by_name.get(norm_config, ProductionConfig)
 
     app = Flask(
         __name__,
@@ -27,7 +29,7 @@ def create_app(config_name=None):
         static_url_path='/static'
     )
 
-    app.config.from_object(config_by_name[config_name])
+    app.config.from_object(target_config)
 
     # Initialize extensions
     db.init_app(app)

@@ -5,10 +5,20 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / '.env')
 
+def _safe_int(val, default):
+    try:
+        if val is None or val == '':
+            return default
+        return int(val)
+    except (ValueError, TypeError):
+        return default
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'flora-flower-secret-key-super-secure-change-in-production-2026')
     db_env = os.environ.get('DATABASE_URL', '').strip()
     if db_env:
+        if db_env.startswith('postgres://'):
+            db_env = db_env.replace('postgres://', 'postgresql://', 1)
         if db_env.startswith('sqlite:///') and not db_env.startswith('sqlite:////') and not (len(db_env) > 11 and db_env[10] == ':'):
             rel_file = db_env.replace('sqlite:///', '')
             SQLALCHEMY_DATABASE_URI = f"sqlite:///{(BASE_DIR / rel_file).as_posix()}"
@@ -30,7 +40,7 @@ class Config:
 
     # Flask-Mail Settings
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
-    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_PORT = _safe_int(os.environ.get('MAIL_PORT'), 587)
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
     MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'false').lower() in ['true', 'on', '1']
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
@@ -50,15 +60,15 @@ class Config:
     PUBLIC_BASE_URL = os.environ.get('PUBLIC_BASE_URL', 'http://127.0.0.1:5000')
 
     # Pagination
-    ITEMS_PER_PAGE = 12
+    ITEMS_PER_PAGE = _safe_int(os.environ.get('ITEMS_PER_PAGE'), 12)
 
     # AI & Gemini Configuration
     AI_MODE = os.environ.get('AI_MODE', 'gemini').lower()  # gemini, demo, mock
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
     GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.5-flash-lite')
     GEMINI_EMBED_MODEL = os.environ.get('GEMINI_EMBED_MODEL', 'gemini-embedding-001')
-    AI_REQUEST_TIMEOUT = int(os.environ.get('AI_REQUEST_TIMEOUT', 30))
-    AI_RATE_LIMIT_PER_MINUTE = int(os.environ.get('AI_RATE_LIMIT_PER_MINUTE', 20))
+    AI_REQUEST_TIMEOUT = _safe_int(os.environ.get('AI_REQUEST_TIMEOUT'), 30)
+    AI_RATE_LIMIT_PER_MINUTE = _safe_int(os.environ.get('AI_RATE_LIMIT_PER_MINUTE'), 20)
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -81,7 +91,10 @@ class ProductionConfig(Config):
 
 config_by_name = {
     'development': DevelopmentConfig,
+    'dev': DevelopmentConfig,
     'testing': TestingConfig,
+    'test': TestingConfig,
     'production': ProductionConfig,
-    'default': DevelopmentConfig
+    'prod': ProductionConfig,
+    'default': ProductionConfig
 }
